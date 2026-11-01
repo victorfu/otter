@@ -1,0 +1,39 @@
+[package]
+name = "myapp-app"
+description = "MyApp desktop shell (Tauri)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+default-run = "myapp"
+
+[lib]
+name = "myapp_app_lib"
+path = "src/lib.rs"
+
+[[bin]]
+name = "myapp"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "=2.7.3", features = [] }
+
+[dependencies]
+myapp-core.workspace = true
+log.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+ts-rs.workspace = true
+tauri = { version = "=2.12.4", features = [] }
+tauri-plugin-log = "=2.10.1"
+tauri-plugin-opener = "=2.7.2"
+tauri-plugin-updater = "=2.14.0"
+tauri-plugin-window-state = "=2.5.0"
+
+[target.'cfg(any(target_os = "windows", target_os = "macos", target_os = "linux"))'.dependencies]
+tauri-plugin-single-instance = "=2.5.4"
+
+[lints]
+workspace = true

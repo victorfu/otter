@@ -1,0 +1,4 @@
+[env]
+# ts-rs writes generated TypeScript types here when `cargo test` runs.
+# `npm run bindings -- --check` overrides this to diff against a temp dir.
+TS_RS_EXPORT_DIR = { value = "apps/client/src/bindings", relative = true }

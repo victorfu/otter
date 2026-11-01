@@ -1,0 +1,10 @@
+{
+  "printWidth": 100,
+  "ignorePatterns": [
+    "apps/client/src/bindings/**",
+    "crates-tauri/app/gen/**",
+    "package-lock.json",
+    "release/**",
+    "target/**"
+  ]
+}

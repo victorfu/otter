@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+target/
+release/
+*.tsbuildinfo
+
+# Tauri generated
+crates-tauri/app/gen/
+
+# Secrets — never commit
+.env
+.env.*
+!.env.example
+*.key
+*.key.pub
+*.p12
+*.pfx
+
+# Logs / OS / editor
+*.log
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json

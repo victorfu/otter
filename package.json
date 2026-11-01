@@ -1,0 +1,37 @@
+{
+  "name": "myapp-workspace",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "type": "module",
+  "scripts": {
+    "init": "npm install && node scripts/bootstrap.mjs",
+    "start": "tauri dev",
+    "dev": "tauri dev",
+    "tauri": "tauri",
+    "check": "node scripts/check.mjs",
+    "format": "oxfmt && cargo fmt --all",
+    "lint": "oxlint",
+    "test": "node scripts/test.mjs",
+    "doctor": "node scripts/doctor.mjs",
+    "sync": "node scripts/sync-app-config.mjs",
+    "bindings": "node scripts/bindings.mjs",
+    "icons": "node scripts/icons.mjs",
+    "version:set": "node scripts/set-version.mjs",
+    "bundle": "node scripts/bundle.mjs",
+    "release:collect": "node scripts/collect-release.mjs",
+    "release:latest-json": "node scripts/make-latest-json.mjs",
+    "updater:keygen": "node scripts/updater-keygen.mjs"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "2.12.3",
+    "oxfmt": "0.73.0",
+    "oxlint": "1.88.0"
+  },
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "packageManager": "npm@11.19.1"
+}

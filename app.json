@@ -1,0 +1,9 @@
+{
+  "$comment": "Single source of truth for app identity. Edit here, then run `npm run sync`.",
+  "productName": "MyApp",
+  "identifier": "com.example.myapp",
+  "description": "A cross-platform desktop app built with Tauri.",
+  "publisher": "Example Inc.",
+  "homepage": "https://example.com",
+  "updaterEndpoint": "https://example.com/myapp/updates/latest.json"
+}

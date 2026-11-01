@@ -1,0 +1,20 @@
+# Normalize everything to LF in the repo and working tree.
+* text=auto eol=lf
+
+# Windows-only scripts keep CRLF.
+*.ps1 text eol=crlf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# Binary assets.
+*.png binary
+*.ico binary
+*.icns binary
+*.jpg binary
+*.webp binary
+*.woff2 binary
+
+# Generated files: collapse in diffs.
+apps/client/src/bindings/** linguist-generated=true
+Cargo.lock linguist-generated=true
+package-lock.json linguist-generated=true
