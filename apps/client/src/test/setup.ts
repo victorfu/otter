@@ -18,6 +18,9 @@ if (!window.matchMedia) {
     }) as MediaQueryList;
 }
 
+// jsdom doesn't implement scrolling; the router calls it on navigation.
+window.scrollTo = () => {};
+
 afterEach(() => {
   cleanup();
   clearMocks();

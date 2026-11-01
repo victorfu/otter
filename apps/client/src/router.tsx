@@ -7,8 +7,9 @@ import {
 import { Layout } from "@/components/Layout";
 import { AboutPage } from "@/routes/AboutPage";
 import { HomePage } from "@/routes/HomePage";
+import { NotFoundPage } from "@/routes/NotFoundPage";
 
-const rootRoute = createRootRoute({ component: Layout });
+const rootRoute = createRootRoute({ component: Layout, notFoundComponent: NotFoundPage });
 
 const homeRoute = createRoute({ getParentRoute: () => rootRoute, path: "/", component: HomePage });
 

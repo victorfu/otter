@@ -6,10 +6,10 @@
 //
 // To use real artwork, replace crates-tauri/app/icons/source/*.png (1024x1024,
 // transparent background) and run `npm run icons`.
-import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { deflateSync } from "node:zlib";
-import { TAURI_DIR, c, run } from "./lib/util.mjs";
+import { CLIENT_DIR, TAURI_DIR, c, run } from "./lib/util.mjs";
 
 const ICONS = path.join(TAURI_DIR, "icons");
 const SOURCE = path.join(ICONS, "source");
@@ -35,6 +35,13 @@ for (const flavor of FLAVORS) {
     rmSync(path.join(out, mobile), { recursive: true, force: true });
   console.log(c.green(`Generated icons/${flavor}/`));
 }
+
+// Favicon for the webview (avoids a 404 on /favicon.ico).
+copyFileSync(
+  path.join(ICONS, "release", "32x32.png"),
+  path.join(CLIENT_DIR, "public", "favicon.png"),
+);
+console.log(c.green("Copied apps/client/public/favicon.png"));
 
 // --- Placeholder drawing (no dependencies) -----------------------------------
 
