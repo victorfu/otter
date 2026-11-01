@@ -22,6 +22,7 @@ New machine? Follow [DEVELOPMENT.md](DEVELOPMENT.md#1-environment-setup) first.
 | `npm run check`             | Type-check, lint, format check, clippy                |
 | `npm test`                  | Vitest + cargo test                                   |
 | `npm run format`            | Format TypeScript and Rust                            |
+| `npm run build`             | Release executable only → `target/release/otter.exe`  |
 | `npm run bundle`            | Release installers for this OS → `release/<version>/` |
 | `npm run version:set 1.2.3` | Bump the version everywhere                           |
 

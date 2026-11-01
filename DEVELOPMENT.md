@@ -121,19 +121,20 @@ npm run doctor
 
 All scripts work in PowerShell, cmd, bash and zsh. Any logic lives in `scripts/*.mjs`.
 
-| Command                     | What it does                                                                                                        |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `npm run init`              | First-time setup: `npm install`, install the pinned Rust toolchain, `cargo fetch`, create `.env`                    |
-| `npm start`                 | Dev mode: Vite HMR for the UI, and Rust rebuilds and restarts on save                                               |
-| `npm run check`             | sync check, ts-rs bindings check, `tsc`, `oxlint`, `oxfmt --check`, `cargo fmt --check`, `cargo clippy -D warnings` |
-| `npm run format`            | `oxfmt` + `cargo fmt --all`                                                                                         |
-| `npm test`                  | Vitest (frontend) + `cargo test --workspace`                                                                        |
-| `npm run doctor`            | Environment check                                                                                                   |
-| `npm run bindings`          | Regenerate TypeScript types from Rust (ts-rs)                                                                       |
-| `npm run sync`              | Push `app.json` / version into every config file                                                                    |
-| `npm run icons`             | Regenerate all icon sizes from `crates-tauri/app/icons/source/*.png`                                                |
-| `npm run version:set 1.2.3` | Set the version everywhere                                                                                          |
-| `npm run bundle`            | Build release installers for this platform (see RELEASING.md)                                                       |
+| Command                     | What it does                                                                                                                |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `npm run init`              | First-time setup: `npm install`, install the pinned Rust toolchain, `cargo fetch`, create `.env`                            |
+| `npm start`                 | Dev mode: Vite HMR for the UI, and Rust rebuilds and restarts on save                                                       |
+| `npm run check`             | sync check, ts-rs bindings check, `tsc`, `oxlint`, `oxfmt --check`, `cargo fmt --check`, `cargo clippy -D warnings`         |
+| `npm run format`            | `oxfmt` + `cargo fmt --all`                                                                                                 |
+| `npm test`                  | Vitest (frontend) + `cargo test --workspace`                                                                                |
+| `npm run doctor`            | Environment check                                                                                                           |
+| `npm run bindings`          | Regenerate TypeScript types from Rust (ts-rs)                                                                               |
+| `npm run sync`              | Push `app.json` / version into every config file                                                                            |
+| `npm run icons`             | Regenerate all icon sizes from `crates-tauri/app/icons/source/*.png`                                                        |
+| `npm run version:set 1.2.3` | Set the version everywhere                                                                                                  |
+| `npm run build`             | Release executable without installers (`target/release/otter`, `.exe` on Windows); `npm run build:dev` for the Dev identity |
+| `npm run bundle`            | Build release installers for this platform (see RELEASING.md)                                                               |
 
 Tips:
 

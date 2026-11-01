@@ -11,6 +11,8 @@
     "start": "tauri dev",
     "dev": "tauri dev",
     "tauri": "tauri",
+    "build": "tauri build --no-bundle --config crates-tauri/app/tauri.release.conf.json",
+    "build:dev": "tauri build --no-bundle",
     "check": "node scripts/check.mjs",
     "format": "oxfmt && cargo fmt --all",
     "lint": "oxlint",
