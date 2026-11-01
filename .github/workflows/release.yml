@@ -1,0 +1,135 @@
+# Build installers on every OS and attach them to a draft GitHub Release.
+# Triggered by pushing a tag like v1.2.3. Inactive until the repo is on GitHub.
+# Required/optional secrets are listed in RELEASING.md.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    name: build (${{ matrix.name }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows-x86_64
+            os: windows-latest
+            args: ""
+          - name: macos-aarch64
+            os: macos-latest
+            args: "--target aarch64-apple-darwin"
+          - name: macos-x86_64
+            os: macos-latest
+            args: "--target x86_64-apple-darwin"
+          - name: linux-x86_64
+            os: ubuntu-22.04
+            args: ""
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Verify tag matches package.json version
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match package.json version $version (run npm run version:set)"
+            exit 1
+          fi
+
+      - name: Install Linux system dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file \
+            libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: Use pinned npm (packageManager)
+        run: npm install -g "$(node -p "require('./package.json').packageManager")"
+
+      - name: Install Rust toolchain (rust-toolchain.toml)
+        run: |
+          rustup toolchain install
+          if [ "$RUNNER_OS" = "macOS" ]; then rustup target add aarch64-apple-darwin x86_64-apple-darwin; fi
+
+      - uses: Swatinem/rust-cache@v2.9.2
+        with:
+          key: ${{ matrix.name }}
+
+      - run: npm ci
+
+      # Export only secrets that are set: empty values would make the Tauri CLI
+      # try (and fail) to sign. Missing secrets ⇒ unsigned build with a warning.
+      - name: Configure signing
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
+          WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+        run: |
+          for name in TAURI_SIGNING_PRIVATE_KEY TAURI_SIGNING_PRIVATE_KEY_PASSWORD \
+                      APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_SIGNING_IDENTITY \
+                      APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID; do
+            value="${!name}"
+            if [ -n "$value" ]; then
+              { echo "$name<<__EOF__"; echo "$value"; echo "__EOF__"; } >> "$GITHUB_ENV"
+            fi
+          done
+
+          overrides='{}'
+          if [ -z "$TAURI_SIGNING_PRIVATE_KEY" ]; then
+            echo "::warning::TAURI_SIGNING_PRIVATE_KEY not set: no updater artifacts / latest.json"
+            overrides='{"bundle":{"createUpdaterArtifacts":false}}'
+          fi
+          if [ "$RUNNER_OS" = "macOS" ] && [ -z "$APPLE_CERTIFICATE" ]; then
+            echo "::warning::Apple signing secrets not set: ad-hoc signed, not notarized"
+            overrides="$(node -e 'const o=JSON.parse(process.argv[1]);o.bundle={...o.bundle,macOS:{signingIdentity:"-"}};console.log(JSON.stringify(o))' "$overrides")"
+          fi
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            if [ -n "$WINDOWS_CERTIFICATE" ]; then
+              echo "$WINDOWS_CERTIFICATE" | base64 --decode > cert.pfx
+              thumbprint="$(powershell -NoProfile -Command "(Import-PfxCertificate -FilePath cert.pfx -CertStoreLocation Cert:\CurrentUser\My -Password (ConvertTo-SecureString -String \$env:WINDOWS_CERTIFICATE_PASSWORD -Force -AsPlainText)).Thumbprint")"
+              rm cert.pfx
+              overrides="$(node -e 'const o=JSON.parse(process.argv[1]);o.bundle={...o.bundle,windows:{certificateThumbprint:process.argv[2],digestAlgorithm:"sha256",timestampUrl:"http://timestamp.digicert.com"}};console.log(JSON.stringify(o))' "$overrides" "$thumbprint")"
+            else
+              echo "::warning::WINDOWS_CERTIFICATE not set: installers are unsigned"
+            fi
+          fi
+          echo "$overrides" > ci-overrides.json
+          cat ci-overrides.json
+
+      - uses: tauri-apps/tauri-action@action-v1.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: "MyApp ${{ github.ref_name }}"
+          releaseBody: "See the assets below to download and install this version."
+          releaseDraft: true
+          prerelease: false
+          tauriScript: npx tauri
+          args: >-
+            --config crates-tauri/app/tauri.release.conf.json
+            --config ci-overrides.json
+            ${{ matrix.args }}
+          uploadUpdaterJson: true
+          updaterJsonPreferNsis: true
