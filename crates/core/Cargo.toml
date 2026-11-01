@@ -1,5 +1,5 @@
 [package]
-name = "myapp-core"
+name = "otter-core"
 description = "Pure Rust business logic. Must not depend on Tauri."
 version.workspace = true
 edition.workspace = true

@@ -4,9 +4,9 @@
   "version": "0.1.0",
   "identifier": "cc.otter.dev",
   "build": {
-    "beforeDevCommand": "npm run dev -w @myapp/client",
+    "beforeDevCommand": "npm run dev -w @otter/client",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "npm run build -w @myapp/client",
+    "beforeBuildCommand": "npm run build -w @otter/client",
     "frontendDist": "../../apps/client/dist"
   },
   "app": {

@@ -1,5 +1,5 @@
 [package]
-name = "myapp-app"
+name = "otter-app"
 description = "Otter desktop shell (Tauri)."
 version.workspace = true
 edition.workspace = true
@@ -9,7 +9,7 @@ publish.workspace = true
 default-run = "otter"
 
 [lib]
-name = "myapp_app_lib"
+name = "otter_app_lib"
 path = "src/lib.rs"
 
 [[bin]]
@@ -20,7 +20,7 @@ path = "src/main.rs"
 tauri-build = { version = "=2.7.3", features = [] }
 
 [dependencies]
-myapp-core.workspace = true
+otter-core.workspace = true
 log.workspace = true
 serde.workspace = true
 serde_json.workspace = true

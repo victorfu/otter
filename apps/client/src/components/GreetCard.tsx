@@ -18,7 +18,7 @@ export function GreetCard() {
   return (
     <Card
       title="Greeting"
-      description="React → Tauri command → myapp-core"
+      description="React → Tauri command → otter-core"
       icon={<MessageSquareText className="size-4" />}
     >
       <form onSubmit={onSubmit} className="flex gap-2">

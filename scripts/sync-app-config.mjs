@@ -93,7 +93,7 @@ syncText("Cargo.toml", (s) =>
 );
 
 syncText("Cargo.lock", (s) =>
-  s.replace(/(name = "myapp-(?:core|app)"\r?\nversion = ")[^"]*(")/g, `$1${version}$2`),
+  s.replace(/(name = "otter-(?:core|app)"\r?\nversion = ")[^"]*(")/g, `$1${version}$2`),
 );
 
 // --- Frontend -----------------------------------------------------------------

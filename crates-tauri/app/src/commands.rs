@@ -61,16 +61,16 @@ pub fn app_paths<R: Runtime>(app: AppHandle<R>) -> Result<AppPaths, CommandError
 }
 
 #[tauri::command]
-pub fn system_info() -> myapp_core::SystemInfo {
-    myapp_core::system_info()
+pub fn system_info() -> otter_core::SystemInfo {
+    otter_core::system_info()
 }
 
 /// Frontend → Tauri command → core crate, with validation errors mapped to
 /// [`CommandError`].
 #[tauri::command]
-pub fn greet(name: String) -> Result<myapp_core::Greeting, CommandError> {
+pub fn greet(name: String) -> Result<otter_core::Greeting, CommandError> {
     log::debug!("greet({name:?})");
-    myapp_core::greet(&name).map_err(|err| {
+    otter_core::greet(&name).map_err(|err| {
         log::warn!("greet rejected: {err}");
         CommandError::from(err)
     })

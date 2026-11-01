@@ -3,7 +3,7 @@
 import { c, run } from "./lib/util.mjs";
 
 const suites = [
-  ["Frontend (vitest)", "npm", ["run", "test", "-w", "@myapp/client"]],
+  ["Frontend (vitest)", "npm", ["run", "test", "-w", "@otter/client"]],
   ["Rust (cargo test)", "cargo", ["test", "--workspace"]],
 ];
 

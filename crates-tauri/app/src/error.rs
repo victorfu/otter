@@ -23,8 +23,8 @@ impl CommandError {
     }
 }
 
-impl From<myapp_core::GreetError> for CommandError {
-    fn from(err: myapp_core::GreetError) -> Self {
+impl From<otter_core::GreetError> for CommandError {
+    fn from(err: otter_core::GreetError) -> Self {
         Self::new(err.code(), err)
     }
 }
@@ -47,7 +47,7 @@ mod tests {
 
     #[test]
     fn maps_core_errors_to_stable_codes() {
-        let err: CommandError = myapp_core::GreetError::EmptyName.into();
+        let err: CommandError = otter_core::GreetError::EmptyName.into();
         assert_eq!(err.code, "EMPTY_NAME");
         assert_eq!(err.message, "Please enter a name.");
     }

@@ -166,7 +166,7 @@ package.json              npm workspaces root; `version` is the app version
 ```text
 React component ──► lib/ipc.ts `commands.greet()` ──► invoke("greet")
                                                        │
-crates-tauri/app/src/commands.rs  #[tauri::command] greet ──► myapp_core::greet()
+crates-tauri/app/src/commands.rs  #[tauri::command] greet ──► otter_core::greet()
                                                        │
 Result<Greeting, CommandError> ◄───────────────────────┘
 ```
@@ -193,7 +193,7 @@ Because the identifiers differ, app data, localStorage, window state and the sin
 
 1. Edit `app.json` (product name, identifier, publisher, homepage, updater endpoint).
 2. `npm run sync`
-3. Optionally rename the npm/cargo package names (`@myapp/client`, `myapp-core`, `myapp-app`; the executable is the `[[bin]]` name in `crates-tauri/app/Cargo.toml`).
+3. Optionally rename the npm/cargo package names (`@otter/client`, `otter-core`, `otter-app`; the executable is the `[[bin]]` name in `crates-tauri/app/Cargo.toml`).
 4. Replace `crates-tauri/app/icons/source/*.png` and run `npm run icons`.
 
 > ⚠️ Changing the identifier after users have installed the app moves their data directory. Decide it before your first public release.

@@ -74,7 +74,7 @@ if (dev) {
 if (process.platform === "win32") configureWindowsSigning();
 if (process.platform === "darwin") configureMacSigning();
 
-const overridePath = path.join(tmpdir(), `myapp-bundle-overrides-${process.pid}.json`);
+const overridePath = path.join(tmpdir(), `otter-bundle-overrides-${process.pid}.json`);
 writeFileSync(overridePath, JSON.stringify(overrides));
 configs.push(overridePath);
 

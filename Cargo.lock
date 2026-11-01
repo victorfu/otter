@@ -2210,36 +2210,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "myapp-app"
-version = "0.1.0"
-dependencies = [
- "log",
- "myapp-core",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-log",
- "tauri-plugin-opener",
- "tauri-plugin-single-instance",
- "tauri-plugin-updater",
- "tauri-plugin-window-state",
- "thiserror 2.0.21",
- "ts-rs",
-]
-
-[[package]]
-name = "myapp-core"
-version = "0.1.0"
-dependencies = [
- "os_info",
- "serde",
- "serde_json",
- "thiserror 2.0.21",
- "ts-rs",
-]
-
-[[package]]
 name = "ndk"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2608,6 +2578,36 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror 2.0.21",
+]
+
+[[package]]
+name = "otter-app"
+version = "0.1.0"
+dependencies = [
+ "log",
+ "otter-core",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-log",
+ "tauri-plugin-opener",
+ "tauri-plugin-single-instance",
+ "tauri-plugin-updater",
+ "tauri-plugin-window-state",
+ "thiserror 2.0.21",
+ "ts-rs",
+]
+
+[[package]]
+name = "otter-core"
+version = "0.1.0"
+dependencies = [
+ "os_info",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+ "ts-rs",
 ]
 
 [[package]]

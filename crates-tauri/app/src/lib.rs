@@ -1,5 +1,5 @@
 //! Tauri application shell: wires plugins, windows and IPC commands.
-//! Business logic lives in `myapp-core`; this crate only adapts it to Tauri.
+//! Business logic lives in `otter-core`; this crate only adapts it to Tauri.
 
 mod commands;
 mod error;

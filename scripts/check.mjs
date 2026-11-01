@@ -5,7 +5,7 @@ import { c, run } from "./lib/util.mjs";
 const steps = [
   ["app.json in sync", "node", ["scripts/sync-app-config.mjs", "--check"]],
   ["ts-rs bindings", "node", ["scripts/bindings.mjs", "--check"]],
-  ["tsc", "npm", ["run", "typecheck", "-w", "@myapp/client"]],
+  ["tsc", "npm", ["run", "typecheck", "-w", "@otter/client"]],
   ["oxlint", "oxlint", ["--deny-warnings"]],
   ["oxfmt --check", "oxfmt", ["--check"]],
   ["cargo fmt --check", "cargo", ["fmt", "--all", "--check"]],

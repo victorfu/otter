@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    myapp_app_lib::run();
+    otter_app_lib::run();
 }
