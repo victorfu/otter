@@ -1,4 +1,4 @@
-# MyApp
+# Otter
 
 A cross-platform desktop app (Windows · macOS · Linux) built with **Tauri 2**, **React + TypeScript + Vite**, **Tailwind CSS 4**, **TanStack Router/Query** and **Jotai**. Rust business logic lives in a Tauri-free core crate, and its types are shared with the UI through **ts-rs**.
 
@@ -18,7 +18,7 @@ New machine? Follow [DEVELOPMENT.md](DEVELOPMENT.md#1-environment-setup) first.
 
 | Command                     | Purpose                                               |
 | --------------------------- | ----------------------------------------------------- |
-| `npm start`                 | Dev app ("MyApp Dev", separate data directory)        |
+| `npm start`                 | Dev app ("Otter Dev", separate data directory)        |
 | `npm run check`             | Type-check, lint, format check, clippy                |
 | `npm test`                  | Vitest + cargo test                                   |
 | `npm run format`            | Format TypeScript and Rust                            |

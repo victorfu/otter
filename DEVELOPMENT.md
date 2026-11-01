@@ -150,7 +150,7 @@ apps/client/              Frontend (React + Vite). UI only.
   src/routes/             Pages (TanStack Router, code-based)
 crates/core/              Pure Rust business logic. No Tauri dependency, tested with cargo test.
 crates-tauri/app/         Tauri shell: commands, plugins, windows, capabilities
-  tauri.conf.json         Dev config (identifier *.dev, "MyApp Dev", dev icons)
+  tauri.conf.json         Dev config (identifier *.dev, "Otter Dev", dev icons)
   tauri.release.conf.json Merged over the dev config for release builds
   icons/source/           1024×1024 sources (release.png, dev.png)
   icons/{release,dev}/    Generated sizes
@@ -180,10 +180,10 @@ Result<Greeting, CommandError> ◄───────────────�
 |                 | `npm start` (dev)             | `npm run bundle` (release)      |
 | --------------- | ----------------------------- | ------------------------------- |
 | Config          | `tauri.conf.json`             | + `tauri.release.conf.json`     |
-| Product name    | MyApp Dev                     | MyApp                           |
-| Identifier      | com.example.myapp.dev         | com.example.myapp               |
+| Product name    | Otter Dev                     | Otter                           |
+| Identifier      | cc.otter.dev                  | cc.otter                        |
 | Icons           | `icons/dev` (orange, striped) | `icons/release`                 |
-| Data/config/log | `…/com.example.myapp.dev`     | `…/com.example.myapp`           |
+| Data/config/log | `…/cc.otter.dev`              | `…/cc.otter`                    |
 | Logs            | Terminal + devtools           | Rotating files in the log dir   |
 | Updater         | Disabled ("not set up")       | Enabled once an endpoint is set |
 
@@ -193,7 +193,7 @@ Because the identifiers differ, app data, localStorage, window state and the sin
 
 1. Edit `app.json` (product name, identifier, publisher, homepage, updater endpoint).
 2. `npm run sync`
-3. Optionally rename the npm/cargo package names (`@myapp/client`, `myapp-core`, `myapp-app`, binary `myapp`).
+3. Optionally rename the npm/cargo package names (`@myapp/client`, `myapp-core`, `myapp-app`; the executable is the `[[bin]]` name in `crates-tauri/app/Cargo.toml`).
 4. Replace `crates-tauri/app/icons/source/*.png` and run `npm run icons`.
 
 > ⚠️ Changing the identifier after users have installed the app moves their data directory. Decide it before your first public release.

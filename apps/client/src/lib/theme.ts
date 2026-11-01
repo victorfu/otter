@@ -4,7 +4,7 @@ export type ThemePreference = "light" | "dark" | "system";
 export type ResolvedTheme = "light" | "dark";
 
 /** Must match the key read by the inline script in index.html. */
-export const THEME_STORAGE_KEY = "myapp.theme";
+export const THEME_STORAGE_KEY = "otter.theme";
 
 /** Persisted in localStorage, which is per app identifier (dev and release are separate). */
 export const themePreferenceAtom = atomWithStorage<ThemePreference>(

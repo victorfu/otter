@@ -1,4 +1,4 @@
-//! Core business logic for MyApp.
+//! Core business logic for Otter.
 //!
 //! This crate is deliberately free of any Tauri dependency so it can be unit
 //! tested (and reused, e.g. from a CLI) without a webview. Types that cross the

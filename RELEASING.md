@@ -27,8 +27,8 @@ Rules:
 ## 2. Building installers locally
 
 ```bash
-npm run bundle             # release flavour: MyApp, com.example.myapp
-npm run bundle -- --dev    # dev flavour: "MyApp Dev", com.example.myapp.dev, no updater
+npm run bundle             # release flavour: Otter, cc.otter
+npm run bundle -- --dev    # dev flavour: "Otter Dev", cc.otter.dev, no updater
 ```
 
 | Platform | Output                   | Notes                                                                              |
@@ -50,10 +50,10 @@ What `bundle` does:
 release/0.1.0/
 ├── latest.json
 └── windows/
-    ├── MyApp_0.1.0_x64-setup.exe
-    ├── MyApp_0.1.0_x64-setup.exe.sig
-    ├── MyApp_0.1.0_x64_en-US.msi
-    ├── MyApp_0.1.0_x64_en-US.msi.sig
+    ├── Otter_0.1.0_x64-setup.exe
+    ├── Otter_0.1.0_x64-setup.exe.sig
+    ├── Otter_0.1.0_x64_en-US.msi
+    ├── Otter_0.1.0_x64_en-US.msi.sig
     └── SHA256SUMS.txt
 ```
 
@@ -159,7 +159,7 @@ When you create the repository:
 
    `.github/workflows/release.yml` builds Windows, macOS (aarch64 and x86_64) and Linux, then creates a **draft** release with installers, updater bundles, `.sig` files and `latest.json`. Review it and click **Publish**. `releases/latest/download/…` only resolves for published releases.
 
-5. Replace `"MyApp"` in `release.yml` → `releaseName` if you renamed the product.
+5. Replace `"Otter"` in `release.yml` → `releaseName` if you renamed the product.
 
 ## 7. Release checklist
 

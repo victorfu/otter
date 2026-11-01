@@ -3,7 +3,7 @@
 // release/<version>/<platform>/ with checksums and latest.json.
 //
 //   npm run bundle                    # release flavour
-//   npm run bundle -- --dev           # "MyApp Dev" flavour (installs side by side, no updater)
+//   npm run bundle -- --dev           # "Otter Dev" flavour (installs side by side, no updater)
 //   npm run bundle -- --no-universal  # macOS: build for the host arch only
 //   npm run bundle -- --target <triple>
 //

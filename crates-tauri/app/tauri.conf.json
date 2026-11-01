@@ -1,8 +1,8 @@
 {
   "$schema": "../../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "MyApp Dev",
+  "productName": "Otter Dev",
   "version": "0.1.0",
-  "identifier": "com.example.myapp.dev",
+  "identifier": "cc.otter.dev",
   "build": {
     "beforeDevCommand": "npm run dev -w @myapp/client",
     "devUrl": "http://localhost:1420",
@@ -13,7 +13,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "MyApp Dev",
+        "title": "Otter Dev",
         "width": 1100,
         "height": 720,
         "minWidth": 760,
