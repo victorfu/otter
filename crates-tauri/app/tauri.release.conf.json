@@ -1,0 +1,24 @@
+{
+  "$schema": "../../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "MyApp",
+  "identifier": "com.example.myapp",
+  "bundle": {
+    "icon": [
+      "icons/release/32x32.png",
+      "icons/release/128x128.png",
+      "icons/release/128x128@2x.png",
+      "icons/release/icon.icns",
+      "icons/release/icon.ico"
+    ],
+    "createUpdaterArtifacts": true
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "",
+      "endpoints": ["https://example.com/myapp/updates/latest.json"],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  }
+}
