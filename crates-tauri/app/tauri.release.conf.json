@@ -14,7 +14,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDAzQTNGM0RFNTFGMDg0QUMKUldTc2hQQlIzdk9qQTlMZWorejdqM3o3THo2bkR0NFUrem8zOEM2NXc5YUFIbzIwa3VYckJIR1QK",
       "endpoints": ["https://example.com/myapp/updates/latest.json"],
       "windows": {
         "installMode": "passive"
