@@ -236,7 +236,7 @@ export default function PlayerBar({ job }: { job: Job }) {
 			initial={{ opacity: 0, y: 12 }}
 			animate={{ opacity: 1, y: 0 }}
 			transition={{ duration: 0.2, ease: 'easeOut' }}
-			className="sticky bottom-0 z-10 flex h-16 shrink-0 items-center gap-4 border-t border-border bg-background/85 px-4 backdrop-blur-md">
+			className="studio-player sticky bottom-0 z-10 flex h-16 shrink-0 items-center gap-4 border-t border-border bg-background/85 px-4 backdrop-blur-md">
 			<div className="hidden min-w-0 basis-[150px] flex-col justify-center sm:flex">
 				<div className="truncate text-[13px] font-medium text-foreground">{job.name}</div>
 				<Tooltip>
@@ -303,7 +303,7 @@ export default function PlayerBar({ job }: { job: Job }) {
 						seekable ? 'cursor-pointer' : 'cursor-default opacity-60',
 					)}>
 					<div className="h-1 w-full overflow-hidden rounded-full bg-muted">
-						<div className="h-full rounded-full bg-foreground" style={{ width: `${progress * 100}%` }} />
+						<div className="h-full rounded-full bg-primary" style={{ width: `${progress * 100}%` }} />
 					</div>
 					<div
 						aria-hidden

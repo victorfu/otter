@@ -91,7 +91,8 @@ const TranscriptRow = memo(function TranscriptRow({
 			animate={{ opacity: 1, y: 0 }}
 			transition={{ duration: 0.15, ease: 'easeOut' }}
 			className={cn(
-				'group relative -mx-3 flex gap-3 rounded-xl px-3 py-2 transition-colors duration-150',
+				'transcript-line group relative flex gap-4 px-3 py-3 transition-colors duration-150',
+				active && 'is-playing',
 				single && !active && editable && !isEditing && 'hover:bg-muted/40',
 			)}>
 			{/*

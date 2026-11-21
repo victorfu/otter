@@ -12,10 +12,10 @@ import { SessionProvider, useSession } from './session'
 function useSidebarVisible() {
 	const [visible, setVisible] = useState(() => {
 		try {
-			// Open by default: only an explicit collapse keeps it shut.
-			return window.localStorage.getItem(SIDEBAR_STORAGE_KEY) !== 'collapsed'
+			// Give the document the full window until a reader chooses to pin the library.
+			return window.localStorage.getItem(SIDEBAR_STORAGE_KEY) === 'expanded'
 		} catch {
-			return true
+			return false
 		}
 	})
 
@@ -50,7 +50,7 @@ function MainContent() {
 						exit={{ opacity: 0, y: -8 }}
 						transition={{ duration: 0.15, ease: 'easeOut' }}
 						className="flex min-h-0 flex-1 flex-col">
-						<IdleHero />
+						<div className="studio-home"><RecentsSidebar directory /><IdleHero /></div>
 					</motion.div>
 				) : (
 					<motion.div
@@ -114,21 +114,23 @@ function PlayerSlot() {
 }
 
 function Shell() {
+	const { mode } = useSession()
 	const showSidebar = useShowSidebar()
 
 	return (
 		<Layout
+			showRecentsToggle={mode !== 'idle'} sidebarExpanded={showSidebar}
 			bottomBar={<PlayerSlot />}
 			sidebar={
 				<AnimatePresence initial={false}>
-					{showSidebar && (
+					{mode !== 'idle' && showSidebar && (
 						<motion.div
 							key="recents"
 							initial={{ opacity: 0, width: 0 }}
 							animate={{ opacity: 1, width: 'auto' }}
 							exit={{ opacity: 0, width: 0 }}
 							transition={{ duration: 0.2, ease: 'easeOut' }}
-							className="flex min-h-0 overflow-hidden bg-background/90 dark:bg-background/55">
+							className="studio-session-sidebar flex min-h-0 overflow-hidden bg-card">
 							<RecentsSidebar />
 						</motion.div>
 					)}

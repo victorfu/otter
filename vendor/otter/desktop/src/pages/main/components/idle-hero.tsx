@@ -12,6 +12,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip
 import { cn } from '~/lib/style'
 import { parseMediaLinks } from '~/lib/ytdlp'
 import { useSession, type IdlePanel } from '../session'
+import { openSettingsSection } from '~/lib/app'
 import QuietRow from './quiet-row'
 
 function formatElapsed(seconds: number) {
@@ -72,7 +73,7 @@ function LevelMeter() {
 			{BAR_WEIGHTS.map((weight, index) => (
 				<span
 					key={index}
-					className="w-[2px] rounded-full bg-foreground transition-[height] duration-75 ease-out"
+					className="w-[3px] rounded-full bg-primary transition-[height] duration-75 ease-out"
 					style={{ height: silent ? BAR_MIN_HEIGHT : BAR_MIN_HEIGHT + level * weight * (BAR_MAX_HEIGHT - BAR_MIN_HEIGHT) }}
 				/>
 			))}
@@ -80,25 +81,12 @@ function LevelMeter() {
 	)
 }
 
-/** One segment of the joined source switcher: icon-only keys, the active one reads as raised. */
-function Segment({ active, label, onClick, children }: { active?: boolean; label: string; onClick: () => void; children: React.ReactNode }) {
+/** A labeled source selector, shared by keyboard and pointer users. */
+function Segment({ active, disabled, label, onClick, children }: { active?: boolean; disabled?: boolean; label: string; onClick: () => void; children: React.ReactNode }) {
 	return (
-		<Tooltip>
-			<TooltipTrigger asChild>
-				<button
-					type="button"
-					aria-pressed={active}
-					aria-label={label}
-					onClick={onClick}
-					className={cn(
-						'inline-flex h-10 w-14 cursor-pointer items-center justify-center rounded-full transition-colors duration-150',
-						active ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
-					)}>
-					{children}
-				</button>
-			</TooltipTrigger>
-			<TooltipContent side="bottom">{label}</TooltipContent>
-		</Tooltip>
+		<button type="button" aria-pressed={active} disabled={disabled} onClick={onClick} className="studio-source">
+			{children}<span>{label}</span><span aria-hidden className="source-indicator" />
+		</button>
 	)
 }
 
@@ -115,9 +103,9 @@ function RecordPanel() {
 			<div className="flex flex-col items-center gap-4 py-2.5">
 				<div className="flex items-center gap-3">
 					<LevelMeter />
-					<span className="font-mono text-2xl tracking-tight tabular-nums">{formatElapsed(recordElapsed)}</span>
+					<span className="font-mono text-4xl tracking-tight tabular-nums">{formatElapsed(recordElapsed)}</span>
 				</div>
-				<Button onClick={() => recording.stopRecord()} className="h-10 w-full rounded-xl">
+				<Button onClick={() => recording.stopRecord()} className="h-10 w-full rounded-md bg-destructive text-destructive-foreground hover:bg-destructive/90">
 					<Square className="h-3.5 w-3.5 fill-current" />
 					{m.stopRecording()}
 				</Button>
@@ -133,7 +121,7 @@ function RecordPanel() {
 				'flex w-full flex-col gap-5 py-2.5',
 				'[&_label]:text-[11px] [&_label]:font-medium [&_label]:tracking-[0.08em] [&_label]:text-muted-foreground [&_label]:uppercase',
 			)}>
-			<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 [&>div]:space-y-1.5 [&_button]:h-10 [&_button]:rounded-xl">
+			<div className="grid grid-cols-1 gap-3 [&>div]:space-y-1.5 [&_button]:h-10 [&_button]:rounded-xl">
 				<AudioDeviceInput type="input" devices={recording.devices} device={recording.inputDevice} setDevice={recording.setInputDevice} />
 				<AudioDeviceInput type="output" devices={recording.devices} device={recording.outputDevice} setDevice={recording.setOutputDevice} />
 			</div>
@@ -250,7 +238,7 @@ function LinkPanel() {
 					onClick={() => link.downloadAudio()}
 					disabled={!preference.modelPath || link.pendingLinks.length === 0}
 					// Wide enough for the count, so the box beside it never changes size.
-					className="h-10 w-32 shrink-0 rounded-xl px-4 disabled:opacity-40">
+					className="h-10 shrink-0 rounded-md px-4 disabled:opacity-40">
 					{m.transcribe()}
 					{link.pendingLinks.length > 1 && (
 						<span className="rounded-full bg-primary-foreground/20 px-1.5 text-[11px] font-semibold tabular-nums">{link.pendingLinks.length}</span>
@@ -319,7 +307,7 @@ function LinkPanel() {
 }
 
 export default function IdleHero() {
-	const { dragging, browse, collectingFolder, panel, setPanel, link, recording } = useSession()
+	const { dragging, browse, collectingFolder, panel, setPanel, link, recording, preference } = useSession()
 
 	function selectPanel(next: IdlePanel) {
 		if (recording.isRecording || next === panel) return
@@ -328,24 +316,22 @@ export default function IdleHero() {
 	}
 
 	return (
-		// One optical column: pills, active source and quiet row all span max-w-xl with a 20px rhythm.
-		// The extra bottom padding lifts the column above the true centre — optically centred reads better.
-		<div className="mx-auto flex w-full max-w-xl flex-1 flex-col justify-center gap-5 px-6 pt-4 pb-[30vh]">
-			{/* Joined source switcher: one control, three keys; the active source replaces the drop area. */}
-			<div className="mx-auto inline-flex items-center gap-1 rounded-full border border-border bg-muted/60 p-1">
-				<Segment active={panel === 'none'} label={m.fromFile()} onClick={() => selectPanel('none')}>
+		<section className="studio-console">
+			<h2>{m.newTranscription()}</h2>
+			<div className="studio-sources">
+				<Segment disabled={recording.isRecording || link.downloadingAudio} active={panel === 'none'} label={m.fromFile()} onClick={() => selectPanel('none')}>
 					<FolderOpen className="h-[18px] w-[18px]" />
 				</Segment>
-				<Segment active={panel === 'record'} label={m.record()} onClick={() => selectPanel('record')}>
+				<Segment disabled={recording.isRecording || link.downloadingAudio} active={panel === 'record'} label={m.record()} onClick={() => selectPanel('record')}>
 					<Mic className="h-[18px] w-[18px]" />
 				</Segment>
-				<Segment active={panel === 'link'} label={m.fromLink()} onClick={() => selectPanel('link')}>
+				<Segment disabled={recording.isRecording || link.downloadingAudio} active={panel === 'link'} label={m.fromLink()} onClick={() => selectPanel('link')}>
 					<Link2 className="h-[18px] w-[18px]" />
 				</Segment>
 			</div>
 
 			{/* Fixed-height slot sized to the drop zone so switching sources never moves the pills or the quiet row. */}
-			<div className="flex min-h-[220px] w-full flex-col justify-center">
+			<div className="flex w-full flex-col justify-center">
 				<AnimatePresence mode="wait" initial={false}>
 					{panel === 'none' ? (
 						<motion.button
@@ -357,7 +343,7 @@ export default function IdleHero() {
 							exit={{ opacity: 0, y: -6 }}
 							transition={{ duration: 0.18, ease: 'easeOut' }}
 							className={cn(
-								'group relative cursor-pointer overflow-hidden rounded-[1.25rem] border-2 border-dashed transition-colors duration-150',
+								'studio-drop group relative cursor-pointer overflow-hidden border transition-colors duration-150',
 								dragging ? 'border-foreground/40' : 'border-border bg-muted/30 hover:border-foreground/25 hover:bg-muted/50',
 							)}>
 							{/* The aurora is drag feedback only — at rest the zone stays a quiet surface. */}
@@ -368,12 +354,12 @@ export default function IdleHero() {
 								)}
 							/>
 
-							<div className="relative flex flex-col items-center gap-3.5 px-8 py-12 text-center">
+							<div className="relative flex flex-col items-center gap-3.5 px-4 py-6 text-center">
 								<span className="flex h-12 w-12 items-center justify-center rounded-full bg-background/70 text-foreground shadow-sm">
 									{collectingFolder ? <Spinner className="h-5 w-5" /> : <Upload className="h-5 w-5" />}
 								</span>
 								<div className="space-y-1">
-									<h1 className="text-xl font-semibold tracking-[-0.02em] text-foreground">{m.dropFilesHere()}</h1>
+									<h3 className="text-xl font-semibold tracking-[-0.02em] text-foreground">{m.dropFilesHere()}</h3>
 									<p className="text-[13px] text-muted-foreground">{m.orClickToBrowse()}</p>
 								</div>
 							</div>
@@ -386,7 +372,7 @@ export default function IdleHero() {
 							exit={{ opacity: 0, y: -6 }}
 							transition={{ duration: 0.18, ease: 'easeOut' }}
 							// Same footprint as the drop zone so the composition stays anchored.
-							className="flex min-h-[220px] w-full flex-col justify-center rounded-[1.25rem] border border-border bg-muted/30 px-7">
+							className="flex w-full flex-col justify-center border border-border bg-muted/30 px-3">
 							{panel === 'record' ? <RecordPanel /> : <LinkPanel />}
 						</motion.div>
 					)}
@@ -394,6 +380,9 @@ export default function IdleHero() {
 			</div>
 
 			<QuietRow />
-		</div>
+			<button type="button" className="studio-model" onClick={() => openSettingsSection('models')}>
+				<span>{m.llmModel()}</span><strong>{preference.modelPath?.split(/[\\/]/).pop() || m.selectModel()}</strong>
+			</button>
+		</section>
 	)
 }

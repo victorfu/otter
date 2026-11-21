@@ -299,7 +299,7 @@ export default function TranscriptToolbar({
 
 	return (
 		<>
-			<div className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-1 border-b border-border bg-background/85 px-4 backdrop-blur-md">
+			<div className="studio-toolbar sticky top-0 z-10 flex h-14 shrink-0 items-center gap-1 border-b border-border bg-background/85 px-4 backdrop-blur-md">
 				<AnimatePresence initial={false} mode="wait">
 					{searching ? (
 						<motion.div
@@ -323,7 +323,7 @@ export default function TranscriptToolbar({
 								placeholder={m.searchTranscript()}
 								className="h-9 w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
 							/>
-							<Button variant="ghost" size="iconSm" onClick={closeSearch} className="rounded-full">
+							<Button variant="ghost" size="iconSm" aria-label={m.modalClose()} onClick={closeSearch} className="rounded-full">
 								<X className="h-4 w-4" />
 							</Button>
 						</motion.div>
@@ -380,6 +380,7 @@ export default function TranscriptToolbar({
 							<Button
 								variant="ghost"
 								size="sm"
+								aria-label={m.searchTranscript()}
 								onClick={() => setSearching(true)}
 								disabled={!hasText}
 								className="rounded-full px-3 text-[13px] font-medium">

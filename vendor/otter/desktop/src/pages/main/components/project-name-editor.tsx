@@ -107,7 +107,7 @@ export function ProjectNameEditor({
 					}
 				}}
 				aria-label={m.transcriptName()}
-				className="mb-8 block h-auto w-full border-0 bg-transparent p-0 font-sans text-base font-semibold tracking-tight text-foreground outline-none focus:outline-none focus:ring-0"
+				className="mb-8 block h-auto w-full border-0 bg-transparent p-0 font-sans text-2xl font-semibold sm:text-3xl tracking-tight text-foreground outline-none focus:outline-none focus:ring-0"
 			/>
 		)
 	}
@@ -124,7 +124,7 @@ export function ProjectNameEditor({
 				setDraft(name)
 				setEditing(true)
 			}}
-			className="mb-8 block max-w-full cursor-text truncate border-0 bg-transparent p-0 text-start font-sans text-base font-semibold tracking-tight text-foreground outline-none disabled:cursor-default">
+			className="mb-8 block max-w-full cursor-text truncate border-0 bg-transparent p-0 text-start font-sans text-2xl font-semibold sm:text-3xl tracking-tight text-foreground outline-none disabled:cursor-default">
 			<span ref={titleRef} className="truncate">
 				{name}
 			</span>

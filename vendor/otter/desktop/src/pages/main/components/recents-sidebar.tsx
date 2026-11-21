@@ -3,11 +3,10 @@ import { invoke } from '@tauri-apps/api/core'
 import * as pathApi from '@tauri-apps/api/path'
 import * as dialog from '@tauri-apps/plugin-dialog'
 import * as fs from '@tauri-apps/plugin-fs'
-import { Download, MoreHorizontal, Plus, Search, Settings } from 'lucide-react'
+import { Download, MoreHorizontal, Plus, Search } from 'lucide-react'
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { m } from '~/paraglide/messages.js'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '~/components/ui/dropdown-menu'
-import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
 import { cn } from '~/lib/style'
 import {
 	deleteTranscript,
@@ -19,7 +18,6 @@ import {
 	type TranscriptEntry,
 } from '~/lib/transcripts-store'
 
-import { openSettingsSection } from '~/lib/app'
 import { TOGGLE_SIDEBAR_EVENT } from '~/components/layout'
 import { getTextDirection } from '~/paraglide/runtime.js'
 import { UpdaterContext } from '~/providers/updater'
@@ -242,7 +240,7 @@ function RecentRow({
 	}
 
 	return (
-		<div className={cn('group relative flex items-center rounded-xl transition-colors duration-150', active ? 'bg-muted' : 'hover:bg-muted/60')}>
+		<div className={cn('project-row group relative flex items-center rounded-xl transition-colors duration-150', active ? 'bg-muted' : 'hover:bg-muted/60')}>
 			<RetranscribeDialog open={retranscribing} onOpenChange={setRetranscribing} name={entry.name} onConfirm={retranscribe} />
 			<button
 				type="button"
@@ -307,7 +305,7 @@ function SessionRow({ job, active, onOpen }: { job: Job; active: boolean; onOpen
 						: ''
 
 	return (
-		<div className={cn('group relative flex items-center rounded-xl transition-colors duration-150', active ? 'bg-muted' : 'hover:bg-muted/60')}>
+		<div className={cn('project-row group relative flex items-center rounded-xl transition-colors duration-150', active ? 'bg-muted' : 'hover:bg-muted/60')}>
 			<button type="button" onClick={onOpen} title={job.name} className="min-w-0 flex-1 cursor-pointer px-3 py-2 text-start">
 				<p className="truncate text-[13px] font-medium text-foreground">{job.name}</p>
 				{status && (
@@ -381,8 +379,8 @@ function RecentsList({
 	)
 }
 
-export default function RecentsSidebar() {
-	const { queue, startNew, preference } = useSession()
+export default function RecentsSidebar({ directory = false }: { directory?: boolean }) {
+	const { queue, startNew, preference, recording, link } = useSession()
 	const { updateApp, availableUpdate, state: updateState } = useContext(UpdaterContext)
 	const downloadingUpdate = updateState.phase === 'downloading' 
 	const { width, dragging, handleProps } = useResizableWidth()
@@ -423,14 +421,8 @@ export default function RecentsSidebar() {
 	}
 
 	return (
-		<aside className="relative flex h-full shrink-0 flex-col border-r border-border" style={{ width, direction: getTextDirection() }}>
-			{/* Titlebar strip: hosts the toggle beside the macOS traffic lights (ChatGPT style). */}
-			<div data-tauri-drag-region className="h-14 shrink-0" />
-			{/* Codex-style: the wordmark gets its own row under the titlebar strip. */}
-			<div className="flex items-center gap-2 px-4 pt-0.5 pb-2">
-				<img src="/logo.png" alt="" className="size-7 shrink-0" />
-				<span className="select-none text-[17px] font-semibold tracking-[-0.03em] text-foreground">{m.appTitle()}</span>
-			</div>
+		<aside className={directory ? "studio-directory" : "relative flex h-full shrink-0 flex-col border-r border-border"} style={{ width: directory ? undefined : width, direction: getTextDirection() }}>
+			{directory ? <div className="directory-heading"><h1>{m.recents()}</h1><span>{String(entries.length).padStart(2, '0')}</span></div> : (
 			<div className="px-2">
 				<button
 					type="button"
@@ -441,6 +433,7 @@ export default function RecentsSidebar() {
 				</button>
 			</div>
 
+			)}
 			{entries.length > 8 && (
 				<div className="relative mt-2 px-3">
 					<Search className="pointer-events-none absolute start-6 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -468,10 +461,11 @@ export default function RecentsSidebar() {
 				</>
 			)}
 
-			<p className="px-4 pt-4 pb-2 text-[11px] font-medium tracking-[0.08em] text-muted-foreground uppercase">{m.recents()}</p>
+			{!directory && <p className="px-4 pt-4 pb-2 text-xs text-muted-foreground">{m.recents()}</p>}
 
 			{filtered.length === 0 ? (
-				<div className="min-h-0 flex-1 overflow-y-auto px-2 pb-3">
+				<div className={directory ? "directory-empty" : "min-h-0 flex-1 overflow-y-auto px-2 pb-3"}>
+					{directory && <span className="archive-art" aria-hidden><i /><i /><i /></span>}
 					<p className="px-3 py-2 text-[13px] text-muted-foreground">{entries.length === 0 ? m.noRecentTranscripts() : m.noMatches()}</p>
 				</div>
 			) : (
@@ -480,42 +474,24 @@ export default function RecentsSidebar() {
 					activePath={activePath}
 					activeName={queue.selectedJob?.name ?? null}
 					// Loading another transcript mid-run would fight the queue for the view.
-					disabled={queue.running}
+					disabled={queue.running || recording.isRecording || link.downloadingAudio}
 					onOpen={(entry) => void open(entry)}
 					onChanged={refresh}
 				/>
 			)}
 
-			{/* Footer, ChatGPT-style: Settings row with a small update badge when one is waiting. */}
-			<div className="mt-auto border-t border-border/60 p-2">
-				<div className="flex items-center gap-1">
-					<button
-						type="button"
-						onClick={() => openSettingsSection('')}
-						className="flex min-w-0 flex-1 cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium text-foreground transition-colors duration-150 hover:bg-muted/60">
-						<Settings className="h-4 w-4 text-muted-foreground" strokeWidth={1.75} />
-						{m.settings()}
+			{availableUpdate && (
+				<div className="border-t border-border p-2">
+					<button type="button" onClick={updateApp} className="relative flex items-center gap-2 rounded-md px-3 py-2 text-primary">
+						<Download className="h-4 w-4" />{m.updateVersion()}
+						{downloadingUpdate && <span className="relative h-5 w-5"><UpdateDownloadRing percent={updateState.percent ?? 0} /></span>}
 					</button>
-					{availableUpdate && (
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<button
-									type="button"
-									aria-label={m.updateVersion()}
-									onClick={updateApp}
-									className="relative me-1 flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-full bg-primary text-primary-foreground transition-opacity duration-150 hover:opacity-90">
-									<Download className="h-3.5 w-3.5" />
-									{downloadingUpdate && <UpdateDownloadRing percent={updateState.percent ?? 0} />}
-								</button>
-							</TooltipTrigger>
-							<TooltipContent side="top">{m.updateVersion()}</TooltipContent>
-						</Tooltip>
-					)}
 				</div>
-			</div>
+			)}
 
 			{/* Drag edge: grab anywhere along the border to resize, double-click to reset. */}
 			<div
+				hidden={directory}
 				role="separator"
 				aria-orientation="vertical"
 				aria-label={m.resizeSidebar()}

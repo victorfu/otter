@@ -1,4 +1,4 @@
-import { PanelLeft } from 'lucide-react'
+import { PanelLeft, Settings } from 'lucide-react'
 import { platform } from '@tauri-apps/plugin-os'
 import { ReactNode, useContext, useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
@@ -34,31 +34,8 @@ export function isMacOverlayTitlebar(): boolean {
 	}
 }
 
-/** Mirrors the sidebar state the main page keeps, so the toggle knows whether the panel is showing. */
-function useSidebarExpanded() {
-	const [expanded, setExpanded] = useState(() => {
-		try {
-			// Open by default: only an explicit collapse keeps it shut.
-			return window.localStorage.getItem(SIDEBAR_STORAGE_KEY) !== 'collapsed'
-		} catch {
-			return true
-		}
-	})
-
-	useEffect(() => {
-		function toggle() {
-			setExpanded((previous) => !previous)
-		}
-		window.addEventListener(TOGGLE_SIDEBAR_EVENT, toggle)
-		return () => window.removeEventListener(TOGGLE_SIDEBAR_EVENT, toggle)
-	}, [])
-
-	return expanded
-}
-
-export function SidebarToggleButton() {
+function SidebarToggleButton({ expanded }: { expanded: boolean }) {
 	const { availableUpdate } = useContext(UpdaterContext)
-	const expanded = useSidebarExpanded()
 	// While the sidebar is open its footer already carries the update button; the dot would double up.
 	const hint = availableUpdate && !expanded
 
@@ -67,11 +44,12 @@ export function SidebarToggleButton() {
 			<TooltipTrigger asChild>
 				<Button
 					variant="ghost"
-					size="icon"
+					size="sm"
+					aria-expanded={expanded}
 					aria-label={hint ? m.updateAvailableOpenRecents() : m.toggleRecents()}
-					className="relative h-9 w-9 rounded-full text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground [&_svg]:size-[18px]"
+					className="relative h-9 gap-2 rounded-md text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground [&_svg]:size-[18px]"
 					onClick={() => window.dispatchEvent(new CustomEvent(TOGGLE_SIDEBAR_EVENT))}>
-					<PanelLeft strokeWidth={1.75} />
+					<PanelLeft strokeWidth={1.75} /><span>{m.recents()}</span>
 					{hint && (
 						<span aria-hidden className="absolute end-1 top-1 h-2 w-2 rounded-full bg-primary ring-2 ring-background motion-safe:animate-pulse" />
 					)}
@@ -83,6 +61,8 @@ export function SidebarToggleButton() {
 }
 
 interface LayoutProps {
+	sidebarExpanded?: boolean
+	showRecentsToggle?: boolean
 	children: ReactNode
 	/** Full-height panel docked at the window's start edge (Claude-desktop style). */
 	sidebar?: ReactNode
@@ -90,7 +70,7 @@ interface LayoutProps {
 	bottomBar?: ReactNode
 }
 
-export default function Layout({ children, sidebar, bottomBar }: LayoutProps) {
+export default function Layout({ children, sidebar, bottomBar, sidebarExpanded = false, showRecentsToggle = true }: LayoutProps) {
 	const [settingsVisible, setSettingsVisible] = useState(false)
 	const [settingsScrollTo, setSettingsScrollTo] = useState<string | undefined>(undefined)
 	// Only the main page renders a Recents sidebar, so only it gets the toggle.
@@ -120,20 +100,21 @@ export default function Layout({ children, sidebar, bottomBar }: LayoutProps) {
 
 	return (
 		<div className="flex h-screen min-h-0 flex-col overflow-hidden">
-			{/* Single toggle, fixed to the window so it never moves when the sidebar opens or closes. */}
-			{showSidebarToggle && (
-				// The window controls and the sidebar both live on the physical left, RTL included.
-				<div className="fixed z-50" style={{ left: titlebarInset(), top: 7 }}>
-					<SidebarToggleButton />
-				</div>
-			)}
+			<header data-tauri-drag-region className="studio-header" style={{ paddingLeft: titlebarInset() }}>
+				{showSidebarToggle && showRecentsToggle && <SidebarToggleButton expanded={sidebarExpanded} />}
+				<span aria-hidden className="studio-mark"><i /><i /><i /><i /></span>
+				<span className="studio-wordmark">{m.appTitle()}</span>
+				<Button variant="ghost" size="sm" onClick={() => openSettings()} className="ms-auto gap-2">
+					<Settings className="size-4" />{m.settings()}
+				</Button>
+			</header>
 			{settingsVisible && <SettingsModal visible={settingsVisible} setVisible={setSettingsVisible} scrollTo={settingsScrollTo} />}
 			<ModelDownloadPrompt />
 			{/* The columns are laid out left-to-right in every locale; their contents follow the text direction. */}
 			<div className="flex min-h-0 flex-1" style={{ direction: 'ltr' }}>
 				{sidebar}
 				<div className="flex min-h-0 min-w-0 flex-1 flex-col bg-background" style={{ direction: getTextDirection() }}>
-					<header data-tauri-drag-region className="flex h-14 shrink-0 items-center justify-end gap-4 pe-4"></header>
+					
 					{/* Below the drag strip, so the titlebar and traffic lights stay put; above every page's content. */}
 					<UpdateBanner />
 					{/*

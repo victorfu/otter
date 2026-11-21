@@ -10,7 +10,7 @@ import { isPreparing, stageLabel } from './preparing-state'
 function StatusIcon({ job }: { job: Job }) {
 	switch (job.status) {
 		case 'running':
-			return <Spinner className="h-3.5 w-3.5 text-foreground" />
+			return <Spinner className="h-3.5 w-3.5 text-[var(--processing)]" />
 		case 'done':
 			return <Check className="h-3.5 w-3.5 text-success" strokeWidth={2.4} />
 		case 'error':
@@ -50,7 +50,7 @@ function statusLabel(job: Job) {
 	}
 }
 
-export default function FileQueue() {
+export default function FileQueue({ onSelect }: { onSelect?: () => void }) {
 	const { queue } = useSession()
 
 	return (
@@ -77,7 +77,10 @@ export default function FileQueue() {
 						<button
 							type="button"
 							key={job.id}
-							onClick={() => queue.selectJob(job.id)}
+							onClick={() => {
+								queue.selectJob(job.id)
+								onSelect?.()
+							}}
 							className={cn(
 								'group relative block w-full cursor-pointer rounded-xl px-3 py-2.5 text-start transition-colors duration-150',
 								selected ? 'bg-muted' : 'hover:bg-muted/60',
