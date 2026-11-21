@@ -1,0 +1,10 @@
+[
+	{
+		"title": "Quick Install",
+		"command": "curl -sSf https://victorfu.github.io/otter/installer.sh | sh -s {tag}"
+	},
+	{
+		"title": "Yay (Arch Linux)",
+		"command": "yay -S otter-bin"
+	}
+]

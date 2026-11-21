@@ -50,7 +50,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file \
-            libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+            libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev libasound2-dev libclang-dev
 
       - uses: actions/setup-node@v7.1.0
         with:
@@ -69,7 +69,16 @@ jobs:
         with:
           key: ${{ matrix.name }}
 
+      - uses: getchore/setup-chore@v1
+        with:
+          version: v1.6.0
       - run: npm ci
+      - run: node scripts/otter.mjs init
+      - run: echo "$GITHUB_WORKSPACE/node_modules/.bin" >> "$GITHUB_PATH"
+      - name: Stage cross-compiled engine on macOS
+        if: matrix.name == 'macos-x86_64'
+        working-directory: vendor/otter
+        run: chore setup x86_64-apple-darwin
 
       # Export only secrets that are set: empty values would make the Tauri CLI
       # try (and fail) to sign. Missing secrets ⇒ unsigned build with a warning.
@@ -126,10 +135,10 @@ jobs:
           releaseBody: "See the assets below to download and install this version."
           releaseDraft: true
           prerelease: false
-          tauriScript: npx tauri
+          projectPath: vendor/otter/desktop
+          tauriScript: pnpm exec tauri
           args: >-
-            --config crates-tauri/app/tauri.release.conf.json
-            --config ci-overrides.json
+            --config ../../../ci-overrides.json
             ${{ matrix.args }}
           uploadUpdaterJson: true
           updaterJsonPreferNsis: true

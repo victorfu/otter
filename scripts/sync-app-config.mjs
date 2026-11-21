@@ -57,6 +57,12 @@ function syncText(rel, replacer) {
 const rel = (p) => path.relative(ROOT, p).replaceAll("\\", "/");
 
 // --- Tauri configs ------------------------------------------------------------
+syncJson("vendor/otter/desktop/src-tauri/tauri.conf.json", (conf) => {
+  conf.productName = app.productName;
+  conf.identifier = app.identifier;
+  conf.version = version;
+});
+
 syncJson(rel(path.join(TAURI_DIR, "tauri.conf.json")), (conf) => {
   conf.productName = `${app.productName} Dev`;
   conf.identifier = `${app.identifier}.dev`;

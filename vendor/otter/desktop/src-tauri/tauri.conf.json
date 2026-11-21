@@ -1,0 +1,93 @@
+{
+	"$schema": "./gen/schemas/desktop-schema.json",
+	"productName": "Otter",
+	"version": "0.1.0",
+	"identifier": "cc.otter",
+	"app": {
+		"macOSPrivateApi": true,
+		"windows": [],
+		"withGlobalTauri": true,
+		"security": {
+			"assetProtocol": {
+				"scope": {
+					"allow": [
+						"**"
+					],
+					"deny": [],
+					"requireLiteralLeadingDot": false
+				},
+				"enable": true
+			},
+			"csp": {
+				"default-src": "'self'",
+				"script-src": "'self' 'wasm-unsafe-eval'",
+				"style-src": "'self' 'unsafe-inline'",
+				"img-src": "'self' asset: http://asset.localhost data: blob:",
+				"media-src": "'self' asset: http://asset.localhost data: blob:",
+				"font-src": "'self' data:",
+				"connect-src": "'self' ipc: http://ipc.localhost asset: http://asset.localhost data: blob:",
+				"worker-src": "'self' blob:",
+				"object-src": "'none'",
+				"base-uri": "'self'"
+			},
+			"devCsp": {
+				"default-src": "'self'",
+				"script-src": "'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval'",
+				"style-src": "'self' 'unsafe-inline'",
+				"img-src": "'self' asset: http://asset.localhost data: blob:",
+				"media-src": "'self' asset: http://asset.localhost data: blob:",
+				"font-src": "'self' data:",
+				"connect-src": "'self' ipc: http://ipc.localhost asset: http://asset.localhost data: blob: http://localhost:1420 ws://localhost:1420",
+				"worker-src": "'self' blob:",
+				"object-src": "'none'",
+				"base-uri": "'self'"
+			},
+			"dangerousDisableAssetCspModification": [
+				"style-src"
+			]
+		}
+	},
+	"build": {
+		"beforeDevCommand": "pnpm dev",
+		"beforeBuildCommand": "pnpm build",
+		"frontendDist": "../dist",
+		"devUrl": "http://localhost:1420"
+	},
+	"bundle": {
+		"active": true,
+		"targets": [
+			"nsis",
+			"deb",
+			"rpm",
+			"dmg",
+			"app"
+		],
+		"createUpdaterArtifacts": true,
+		"icon": [
+			"icons/32x32.png",
+			"icons/128x128.png",
+			"icons/128x128@2x.png",
+			"icons/icon.icns",
+			"icons/icon.ico"
+		],
+		"externalBin": [
+			"binaries/otter-server"
+		]
+	},
+	"plugins": {
+		"updater": {
+			"pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEQ4RUExMzE1RUUwQTFFNTgKUldSWUhncnVGUlBxMkFvMHh0TzNUNHY2TnVFQUZpN0xRR0oxaG9MdzJQNUVMSzdkbEhHKzI0YXcK",
+			"endpoints": [
+				"https://victorfu.github.io/otter/updater/stable.json"
+			]
+		},
+		"deep-link": {
+			"mobile": [],
+			"desktop": {
+				"schemes": [
+					"otter"
+				]
+			}
+		}
+	}
+}

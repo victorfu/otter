@@ -1,0 +1,249 @@
+use crate::{
+    cli::{self, is_cli_detected},
+    config::STORE_FILENAME,
+    diagnostics::get_issue_url,
+    error::LogError,
+    server::ServerProcess,
+};
+use eyre::eyre;
+use once_cell::sync::Lazy;
+use std::fs;
+use tauri::{App, Manager};
+use tauri_plugin_autostart::ManagerExt;
+use tauri_plugin_dialog::{DialogExt, MessageDialogButtons};
+use tauri_plugin_store::StoreExt;
+use tokio::sync::Mutex;
+
+pub static STATIC_APP: Lazy<std::sync::Mutex<Option<tauri::AppHandle>>> = Lazy::new(|| std::sync::Mutex::new(None));
+
+pub struct ServerState {
+    pub process: Option<ServerProcess>,
+}
+
+/// Lets a window navigate only within the app's own pages. A link or a script that tries to load
+/// anything else into the window (a remote page would inherit the IPC bridge) is refused; links the
+/// user should follow open in the system browser instead.
+pub fn navigation_guard<R: tauri::Runtime, M: Manager<R>>(manager: &M) -> impl Fn(&tauri::Url) -> bool + Send + 'static {
+    let dev_url = if tauri::is_dev() {
+        manager.config().build.dev_url.clone()
+    } else {
+        None
+    };
+    move |url| {
+        let allowed = is_app_url(url, dev_url.as_ref());
+        if !allowed {
+            // Scheme and host only: the rest of a blocked URL can carry transcript text.
+            tracing::warn!(
+                "blocked navigation to {}://{}",
+                url.scheme(),
+                url.host_str().unwrap_or_default()
+            );
+        }
+        allowed
+    }
+}
+
+/// `tauri://localhost` on macOS and Linux, `http(s)://tauri.localhost` on Windows, and the dev
+/// server while running `tauri dev`.
+pub fn is_app_url(url: &tauri::Url, dev_url: Option<&tauri::Url>) -> bool {
+    match (url.scheme(), url.host_str()) {
+        ("tauri", Some("localhost")) => true,
+        ("http" | "https", Some("tauri.localhost")) => true,
+        ("about", None) => url.path() == "blank",
+        _ => dev_url.is_some_and(|dev| dev.origin() == url.origin()),
+    }
+}
+
+pub fn setup(app: &App) -> Result<(), Box<dyn std::error::Error>> {
+    // Create app directories
+    let local_app_data_dir = app.path().app_local_data_dir()?;
+    let app_config_dir = app.path().app_config_dir()?;
+    fs::create_dir_all(&local_app_data_dir)
+        .unwrap_or_else(|_| panic!("cant create local app data directory at {}", local_app_data_dir.display()));
+    fs::create_dir_all(&app_config_dir)
+        .unwrap_or_else(|_| panic!("cant create app config directory at {}", app_config_dir.display()));
+
+    // Manage server state
+    app.manage(Mutex::new(ServerState { process: None }));
+    app.manage(crate::dictation_indicator::DictationIndicatorRuntime::default());
+
+    let store = app.store(STORE_FILENAME)?;
+
+    // Setup logging to terminal
+    {
+        let mut app_handle = STATIC_APP.lock().expect("lock");
+        *app_handle = Some(app.handle().clone());
+    }
+    crate::logging::setup_logging(app.handle(), store).unwrap();
+    // Before anything touches the staging folder, including the sweep right below.
+    crate::ffmpeg::init_staging_dir(app.handle());
+    crate::startup_cleanup::remove_old_logs(app.handle()).log_error();
+    crate::startup_cleanup::sweep_staging().log_error();
+    crate::startup_cleanup::remove_updater_leftovers().log_error();
+    tracing::debug!("Otter App Running");
+
+    // Re-applying an existing registration upgrades installs created before the hidden launch
+    // argument was added. `enable` overwrites the platform entry while preserving its enabled
+    // state; failures are non-fatal because they must not prevent a manual launch.
+    if app.autolaunch().is_enabled().unwrap_or(false) {
+        app.autolaunch()
+            .enable()
+            .map_err(|error| eyre!("failed to refresh autostart registration: {error}"))
+            .log_error();
+    }
+
+    // Settings live in app_config.json so a person or an agent can edit it directly; the store
+    // plugin never re-reads the file, so a watcher has to push external edits into it.
+    match crate::config_watcher::start(app.handle()) {
+        // Kept in state so the watcher lives as long as the app.
+        Ok(watcher) => {
+            app.manage(watcher);
+        }
+        Err(error) => tracing::error!("could not start config watcher: {:?}", error),
+    }
+
+    // Crash handler
+
+    let _handler = crash_handler::CrashHandler::attach(unsafe {
+        crash_handler::make_crash_event(move |cc: &crash_handler::CrashContext| {
+            #[cfg(windows)]
+            let info = cc.exception_code;
+
+            #[cfg(windows)]
+            tracing::error!("Crash exception code: {}", info);
+
+            #[cfg(target_os = "macos")]
+            let info = cc.exception;
+
+            #[cfg(target_os = "linux")]
+            let info = cc.siginfo;
+
+            #[cfg(unix)]
+            tracing::error!("Crash exception code: {:?}", info);
+
+            if let Some(app_handle) = STATIC_APP.lock().expect("lock").as_ref() {
+                app_handle
+                    .dialog()
+                    .message("App crashed with error. Please register to Github and then click report.")
+                    .kind(tauri_plugin_dialog::MessageDialogKind::Error)
+                    .title("Otter Crashed")
+                    .buttons(MessageDialogButtons::OkCustom("Report".into()))
+                    .show(|_| {});
+                let _ = tauri_plugin_opener::open_url(get_issue_url(format!("{:?}", info)), None::<&str>);
+            }
+
+            crash_handler::CrashEventResult::Handled(true)
+        })
+    });
+
+    // Log some useful data
+    if let Ok(version) = tauri::webview_version() {
+        tracing::debug!("webview version: {}", version);
+    }
+
+    #[cfg(windows)]
+    {
+        if let Err(error) = crate::custom_protocol::register() {
+            tracing::error!("{:?}", error);
+        }
+    }
+
+    tracing::debug!("AVX2: {}", crate::cmd::app::is_avx2_enabled());
+    tracing::debug!("Executable Architecture: {}", std::env::consts::ARCH);
+
+    tracing::debug!("APP VERSION: {}", app.package_info().version.to_string());
+    tracing::debug!("COMMIT HASH: {}", env!("COMMIT_HASH"));
+    tracing::debug!("App Info: {}", crate::diagnostics::get_app_info());
+
+    let app_handle = app.app_handle().clone();
+    if is_cli_detected() {
+        tracing::debug!("CLI mode");
+        tauri::async_runtime::spawn(async move {
+            cli::run(&app_handle).await.map_err(|e| eyre!("{:?}", e)).log_error();
+        });
+    } else {
+        tracing::debug!("Non CLI mode");
+        let background_launch = cli::is_background_launch();
+        // Restarted by an update the user asked for: come back in front, even if this copy was
+        // first started hidden at login.
+        let after_update = crate::updater::begin(app.handle());
+        let shown = after_update || !background_launch;
+        // Create main window
+        let builder = tauri::WebviewWindowBuilder::new(app, "main", tauri::WebviewUrl::App("index.html".into()))
+            .inner_size(800.0, 700.0)
+            .min_inner_size(800.0, 700.0)
+            .center()
+            .title("Otter")
+            .resizable(true)
+            .focused(shown)
+            .shadow(true)
+            .visible(shown)
+            .on_navigation(navigation_guard(app));
+        // The web content extends under the titlebar so the sidebar toggle can sit
+        // beside the traffic lights (ChatGPT-desktop style); the topbar is a drag region.
+        #[cfg(target_os = "macos")]
+        let builder = builder
+            .title_bar_style(tauri::TitleBarStyle::Overlay)
+            .hidden_title(true)
+            // Centered on the 56px titlebar row so the lights align with the sidebar toggle.
+            .traffic_light_position(tauri::LogicalPosition::new(16.0, 28.0))
+            .transparent(true);
+        match builder.build() {
+            Ok(_window) => {
+                // Glass sidebar: the window is transparent on macOS and an NSVisualEffectView
+                // shows the blurred desktop wherever the web content leaves alpha (the sidebar).
+                #[cfg(target_os = "macos")]
+                {
+                    use window_vibrancy::{apply_vibrancy, NSVisualEffectMaterial};
+                    if let Err(error) = apply_vibrancy(&_window, NSVisualEffectMaterial::Sidebar, None, None) {
+                        tracing::warn!("failed to apply vibrancy: {:?}", error);
+                    }
+                }
+            }
+            Err(error) => {
+                tracing::error!("{:?}", error);
+            }
+        }
+        if after_update {
+            crate::tray::show_main_window(app.handle());
+        }
+        crate::updater::start(app.handle());
+        crate::dictation_indicator::initialize(app.handle());
+        if let Err(error) = crate::meeting_prompt::initialize(app.handle()) {
+            tracing::error!("could not initialize meeting prompt: {error}");
+        }
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::is_app_url;
+    use tauri::Url;
+
+    fn allowed(url: &str, dev: Option<&str>) -> bool {
+        let dev = dev.map(|dev| Url::parse(dev).unwrap());
+        is_app_url(&Url::parse(url).unwrap(), dev.as_ref())
+    }
+
+    #[test]
+    fn only_the_app_origins_are_navigable() {
+        assert!(allowed("tauri://localhost/index.html", None));
+        assert!(allowed("http://tauri.localhost/index.html?window=meeting-prompt", None));
+        assert!(allowed("https://tauri.localhost/", None));
+        assert!(allowed("about:blank", None));
+        assert!(!allowed("https://attacker.test/?q=secret", None));
+        assert!(!allowed("http://tauri.localhost.attacker.test/", None));
+        assert!(!allowed("tauri://evil/", None));
+        assert!(!allowed("file:///etc/passwd", None));
+        assert!(!allowed("data:text/html,hi", None));
+        assert!(!allowed("http://localhost:1420/", None));
+    }
+
+    #[test]
+    fn the_dev_server_is_allowed_only_when_configured() {
+        assert!(allowed("http://localhost:1420/index.html", Some("http://localhost:1420")));
+        assert!(!allowed("http://localhost:1421/", Some("http://localhost:1420")));
+        assert!(!allowed("https://localhost:1420/", Some("http://localhost:1420")));
+    }
+}

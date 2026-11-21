@@ -1,0 +1,19 @@
+{
+	"$schema": "./gen/schemas/linux-schema.json",
+	"bundle": {
+		"linux": {
+			"deb": {
+				"depends": ["ffmpeg", "libxdo-dev"],
+				"files": {
+					"/usr/lib/otter/gstreamer-1.0/libgsttauriasset.so": "gstreamer/libgsttauriasset.so"
+				}
+			},
+			"rpm": {
+				"depends": ["libxdo.so.3()(64bit)"],
+				"files": {
+					"/usr/lib/otter/gstreamer-1.0/libgsttauriasset.so": "gstreamer/libgsttauriasset.so"
+				}
+			}
+		}
+	}
+}

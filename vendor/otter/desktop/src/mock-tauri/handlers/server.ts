@@ -1,0 +1,271 @@
+// Mock handlers for the transcription / model commands (Server backend).
+// Simulates model loading, streaming transcription and downloads with real timers
+// so the UI exercises the same progress/abort code paths as the desktop runtime.
+import { emitMockEvent, onMockEvent } from '../event-bus'
+import { ytDlpAssetNames } from '~/lib/config'
+import { APP_LOCAL_DATA, DEFAULT_MODEL_FILE, DOWNLOAD_TICKS, DOWNLOAD_TICK_MS, MODELS_FOLDER, TRANSCRIBE_SEGMENT_INTERVAL_MS, TRANSCRIBE_STAGE_MS, mockArch, mockPlatform, sampleSegments, virtualFs } from '../state'
+import type { CommandHandlerMap } from '../types'
+
+interface Segment {
+	start: number
+	stop: number
+	text: string
+	speaker?: number
+}
+
+interface ServerError {
+	code: string
+	message: string
+}
+
+function serverError(code: string, message: string): ServerError {
+	return { code, message }
+}
+
+function sleep(ms: number) {
+	return new Promise<void>((resolve) => setTimeout(resolve, ms))
+}
+
+const MOCK_LANGUAGES = [
+	'en',
+	'zh',
+	'de',
+	'es',
+	'ru',
+	'ko',
+	'fr',
+	'ja',
+	'pt',
+	'tr',
+	'pl',
+	'ca',
+	'nl',
+	'ar',
+	'sv',
+	'it',
+	'id',
+	'hi',
+	'fi',
+	'vi',
+	'he',
+	'uk',
+	'el',
+	'ms',
+	'cs',
+	'ro',
+	'da',
+	'hu',
+	'ta',
+	'no',
+	'th',
+	'ur',
+	'hr',
+	'bg',
+	'lt',
+	'la',
+	'mi',
+	'ml',
+	'cy',
+	'sk',
+	'te',
+	'fa',
+	'lv',
+	'bn',
+	'sr',
+	'az',
+	'sl',
+	'kn',
+	'et',
+	'mk',
+]
+
+// Module level state, reset only by the mock itself.
+let apiBaseUrl: string | null = null
+
+function fileExists(path: unknown): boolean {
+	return typeof path === 'string' && virtualFs.has(path)
+}
+
+/** Emits `download_progress` tuples; resolves false when aborted mid-flight. */
+async function runDownloadTicks(abortEvent: string): Promise<boolean> {
+	const total = 100_000_000
+	let aborted = false
+	const unsub = onMockEvent(abortEvent, () => {
+		aborted = true
+	})
+	try {
+		for (let tick = 1; tick <= DOWNLOAD_TICKS; tick += 1) {
+			await sleep(DOWNLOAD_TICK_MS)
+			if (aborted) return false
+			const current = Math.round((total * tick) / DOWNLOAD_TICKS)
+			emitMockEvent('download_progress', [current, total])
+		}
+		return !aborted
+	} finally {
+		unsub()
+	}
+}
+
+function runTranscribe(
+	options: Record<string, unknown>,
+	transcriptionId: unknown,
+): Promise<{ processing_time: { secs: number; nanos: number }; segments: Segment[]; word_segments: undefined }> {
+	return new Promise((resolve, reject) => {
+		if (!fileExists(options.path)) {
+			reject(serverError('invalid_request', `File not found: ${String(options.path ?? '')}`))
+			return
+		}
+
+		const diarize = typeof options.diarize_model === 'string' && options.diarize_model.length > 0
+		// The real engines time every word; share each line's time out evenly so the mock carries them too.
+		const segments: Segment[] = sampleSegments.map((segment, index) => {
+			const texts = segment.text.split(' ')
+			const step = (segment.stop - segment.start) / texts.length
+			const words = texts.map((text, at) => ({
+				start: Math.round(segment.start + step * at),
+				stop: Math.round(segment.start + step * (at + 1)),
+				text: at === 0 ? text : ` ${text}`,
+			}))
+			return { start: segment.start, stop: segment.stop, text: segment.text, words, ...(diarize ? { speaker: index % 2 } : {}) }
+		})
+
+		const startedAt = Date.now()
+		let timer: ReturnType<typeof setInterval> | null = null
+		let unsub: (() => void) | null = null
+		let index = 0
+		let settled = false
+
+		function cleanup() {
+			if (timer !== null) {
+				clearInterval(timer)
+				timer = null
+			}
+			if (unsub) {
+				unsub()
+				unsub = null
+			}
+		}
+
+		// Like the backend: only an abort naming this transcription stops it.
+		function onAbort(payload?: unknown) {
+			if (settled || typeof transcriptionId !== 'string' || payload !== transcriptionId) return
+			settled = true
+			cleanup()
+			reject(serverError('aborted', 'transcription aborted'))
+		}
+
+		function tick() {
+			if (settled) return
+			const segment = segments[index]
+			index += 1
+			emitMockEvent('transcribe_progress', Math.round((index / segments.length) * 100))
+			if (segment) {
+				emitMockEvent('new_segment', segment)
+			}
+			if (index >= segments.length) {
+				settled = true
+				cleanup()
+				resolve({
+					processing_time: { secs: Math.max(1, Math.round((Date.now() - startedAt) / 1000)), nanos: 0 },
+					segments,
+					word_segments: undefined,
+				})
+			}
+		}
+
+		unsub = onMockEvent('abort_transcribe', onAbort)
+		// The real server reports these before the first word; walk them so the waiting state shows.
+		const stages = ['preparing', 'speakers', 'transcribing']
+		stages.forEach((stage, at) => setTimeout(() => !settled && emitMockEvent('transcribe_stage', stage), at * TRANSCRIBE_STAGE_MS))
+		setTimeout(() => {
+			if (settled) return
+			emitMockEvent('transcribe_progress', 0)
+			timer = setInterval(tick, TRANSCRIBE_SEGMENT_INTERVAL_MS)
+		}, stages.length * TRANSCRIBE_STAGE_MS)
+	})
+}
+
+export const serverHandlers: CommandHandlerMap = {
+	get_models_folder: () => MODELS_FOLDER,
+
+	// ({ modelPath }) - every mock model reports the same whisper capabilities.
+	get_model_metadata: () => ({
+		format: 'gguf',
+		capabilities: {
+			engine: 'whisper',
+			requires_vad: false,
+			languages: MOCK_LANGUAGES,
+			language_detection: true,
+			streaming: true,
+			translation: true,
+			timestamps: true,
+			text_prompts: true,
+		},
+	}),
+
+	load_model: async () => {
+		await sleep(300)
+		return 'ok'
+	},
+
+	transcribe: (args) => {
+		const options = (args.options ?? {}) as Record<string, unknown>
+		return runTranscribe(options, args.transcriptionId)
+	},
+
+	// `localStorage['mock-model-download'] = 'corrupt'` makes the next downloads fail verification
+	// the way the backend words it, to try the retry path.
+	download_model: async (args) => {
+		const path = String(args.path ?? `${MODELS_FOLDER}/${DEFAULT_MODEL_FILE}`)
+		const completed = await runDownloadTicks('abort_download')
+		if (!completed) {
+			return { status: 'cancelled' }
+		}
+		if (localStorage.getItem('mock-model-download') === 'corrupt') {
+			throw 'Corrupt download: expected sha256 00, got ff'
+		}
+		virtualFs.set(path, null)
+		return { status: 'completed', path }
+	},
+
+	check_model_files: (args) => ((args.paths ?? []) as string[]).map((path) => ({ path, valid: true, size: 0, reason: null })),
+
+	cleanup_partial_downloads: () => [],
+
+	// ({ version }) - the backend owns the URL and the destination; mirror where it lands.
+	download_ytdlp: async () => {
+		const completed = await runDownloadTicks('abort_download')
+		if (!completed) throw 'Download cancelled'
+		virtualFs.set(`${APP_LOCAL_DATA}/${ytDlpAssetNames[`${mockPlatform}-${mockArch}`]}`, null)
+		return undefined
+	},
+
+	get_gpu_devices: () => [{ index: 0, name: 'Mock GPU (Apple M-series)', description: 'mock', type: 'integrated' }],
+
+	get_api_base_url: () => apiBaseUrl,
+
+	start_api_server: () => {
+		apiBaseUrl = 'http://127.0.0.1:33333'
+		return apiBaseUrl
+	},
+
+	stop_api_server: () => {
+		apiBaseUrl = null
+		return true
+	},
+
+	is_avx2_enabled: () => true,
+
+	get_commit_hash: () => 'mockhash',
+
+	get_cargo_features: () => ['vulkan'],
+
+	get_logs: () =>
+		[
+			{ fields: { message: 'mock log line' } },
+			{ fields: { message: 'mock log line: model loaded' } },
+			{ fields: { message: 'mock log line: ERROR simulated failure' } },
+		]
+			.map((line) => JSON.stringify(line))
+			.join('\n'),
+}

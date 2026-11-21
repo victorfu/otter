@@ -1,42 +1,26 @@
 # Otter
 
-A cross-platform desktop app (Windows · macOS · Linux) built with **Tauri 2**, **React + TypeScript + Vite**, **Tailwind CSS 4**, **TanStack Router/Query** and **Jotai**. Rust business logic lives in a Tauri-free core crate, and its types are shared with the UI through **ts-rs**.
+Otter is a local voice transcription app for Windows, macOS and Linux. Its desktop client, native code, transcription engine and translations live in [vendor/otter](vendor/otter). The application uses the identifier `cc.otter`, accepts `otter://` links and saves new projects in `Documents/Otter`.
 
-This repository is a complete skeleton for developing, packaging and releasing. The app itself is a starter page that exercises every layer.
+## Run locally
 
-## Quick start
+Install Node.js 24, libclang (for bindgen), the platform's Tauri and Rust prerequisites, and [Chore](https://getchore.github.io/chore/) 1.6 or later. The launcher also accepts a local Chore executable in `target/otter-tools/`. See the [platform setup instructions](vendor/otter/docs/BUILDING.md).
 
-```bash
-npm run init     # install npm deps, pinned Rust toolchain, crates
-npm run doctor   # verify the machine has everything
-npm start        # launch the dev app (HMR + Rust auto-rebuild)
+```console
+npm run init
+npm start
 ```
 
-New machine? Follow [DEVELOPMENT.md](DEVELOPMENT.md#1-environment-setup) first.
+Initialization installs the locked frontend dependencies and builds the local Otter engine with pinned GGML libraries. Choose a speech model on first launch. Windows and macOS also get the matching FFmpeg binary.
 
-## Common commands
+| Command | Result |
+| --- | --- |
+| `npm start` | Start the desktop app with hot reload |
+| `npm test` | Run the imported desktop frontend tests |
+| `npm run check` | Compile the frontend and check the Rust desktop workspace |
+| `npm run build` | Build the release executable and stage its sidecars under `vendor/otter/target/release/` |
+| `npm run bundle` | Build local installers under `vendor/otter/target/release/bundle/` |
 
-| Command                     | Purpose                                               |
-| --------------------------- | ----------------------------------------------------- |
-| `npm start`                 | Dev app ("Otter Dev", separate data directory)        |
-| `npm run check`             | Type-check, lint, format check, clippy                |
-| `npm test`                  | Vitest + cargo test                                   |
-| `npm run format`            | Format TypeScript and Rust                            |
-| `npm run build`             | Release executable only → `target/release/otter.exe`  |
-| `npm run bundle`            | Release installers for this OS → `release/<version>/` |
-| `npm run version:set 1.2.3` | Bump the version everywhere                           |
+For engine development, follow [the server build guide](vendor/otter/server/docs/BUILDING.md). The earlier Otter starter remains in `apps/client`, `crates/core` and `crates-tauri/app`.
 
-## Docs
-
-- [DEVELOPMENT.md](DEVELOPMENT.md): environment setup on all three platforms, daily workflow, project structure
-- [RELEASING.md](RELEASING.md): versioning, local bundling, code signing, auto-update, GitHub setup
-
-## Layout
-
-```text
-apps/client/       React UI
-crates/core/       Pure Rust logic (no Tauri)
-crates-tauri/app/  Tauri shell, commands, plugins, configs
-scripts/           Cross-platform Node scripts
-app.json           Product name / identifier (single source of truth)
-```
+The transcription code derives from [thewh1teagle/vibe at 8de9b218](https://github.com/thewh1teagle/vibe/tree/8de9b2181c4c65f8c06e68732d5352c91ea27436) under the [MIT license](vendor/otter/LICENSE).

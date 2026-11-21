@@ -9,7 +9,10 @@
 import { copyFileSync, existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { deflateSync } from "node:zlib";
-import { CLIENT_DIR, TAURI_DIR, c, run } from "./lib/util.mjs";
+import { CLIENT_DIR, ROOT, TAURI_DIR, c, run } from "./lib/util.mjs";
+
+const transcriptionApp = path.join(ROOT, "vendor", "otter");
+run("tauri", ["icon", path.join(transcriptionApp, "design", "logo.png"), "--output", path.join(transcriptionApp, "desktop", "src-tauri", "icons")]);
 
 const ICONS = path.join(TAURI_DIR, "icons");
 const SOURCE = path.join(ICONS, "source");
@@ -42,6 +45,12 @@ copyFileSync(
   path.join(CLIENT_DIR, "public", "favicon.png"),
 );
 console.log(c.green("Copied apps/client/public/favicon.png"));
+
+// Keep the app's compact Windows artwork and DPI-specific frames after tauri icon.
+run(process.platform === "win32" ? "python" : "python3", ["scripts/windows-icons.py"]);
+
+// Keep the app's compact Windows artwork and DPI-specific frames after tauri icon.
+run(process.platform === "win32" ? "python" : "python3", ["scripts/windows-icons.py"]);
 
 // --- Placeholder drawing (no dependencies) -----------------------------------
 

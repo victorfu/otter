@@ -34,7 +34,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file \
-            libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+            libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev libasound2-dev libclang-dev
 
       - uses: actions/setup-node@v7.1.0
         with:
@@ -50,5 +50,9 @@ jobs:
       - uses: Swatinem/rust-cache@v2.9.2
 
       - run: npm ci
+      - uses: getchore/setup-chore@v1
+        with:
+          version: v1.6.0
+      - run: node scripts/otter.mjs init
       - run: npm run check
       - run: npm test
