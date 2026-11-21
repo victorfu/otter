@@ -166,6 +166,7 @@ export default function TranscriptView({
 			if (event.key !== ' ' && event.code !== 'Space') return
 			if (event.metaKey || event.ctrlKey || event.altKey) return
 			const target = event.target as HTMLElement | null
+			if (event.defaultPrevented || target?.closest('[role="dialog"], [role="menu"], button')) return
 			if (target && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))) return
 			event.preventDefault()
 			window.dispatchEvent(new CustomEvent(PLAYER_TOGGLE_EVENT))

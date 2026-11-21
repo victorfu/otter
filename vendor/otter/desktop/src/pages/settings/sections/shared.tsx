@@ -38,7 +38,7 @@ export function SettingsGroup({
 }
 
 /** Label + optional one-line description, used on the left side of every row. */
-function RowLabel({ label, description, clamp = true }: { label: ReactNode; description?: ReactNode; clamp?: boolean }) {
+function RowLabel({ label, description, clamp = false }: { label: ReactNode; description?: ReactNode; clamp?: boolean }) {
 	return (
 		<div className="min-w-0 space-y-0.5">
 			<div className="text-sm text-foreground">{label}</div>
@@ -53,7 +53,7 @@ export function SettingsRow({
 	description,
 	children,
 	className,
-	clampDescription = true,
+	clampDescription = false,
 }: {
 	label: ReactNode
 	description?: ReactNode
@@ -62,7 +62,7 @@ export function SettingsRow({
 	clampDescription?: boolean
 }) {
 	return (
-		<div className={cn('flex min-h-[52px] items-center justify-between gap-4 px-4 py-2.5', className)}>
+		<div className={cn('settings-row flex min-h-[52px] items-center justify-between gap-4 px-4 py-2.5', className)}>
 			<RowLabel label={label} description={description} clamp={clampDescription} />
 			{children && <div className="flex shrink-0 items-center gap-1.5">{children}</div>}
 		</div>
@@ -123,7 +123,7 @@ export function ActionRow({
 			type="button"
 			disabled={disabled}
 			onMouseDown={activateOnClick ? undefined : onClick}
-			onClick={activateOnClick ? onClick : undefined}
+			onClick={activateOnClick ? onClick : event => { if (event.detail === 0) onClick?.() }}
 			className={cn(
 				'flex min-h-[52px] w-full cursor-pointer items-center justify-between gap-4 px-4 py-2.5 text-start transition-colors',
 				destructive ? 'text-destructive hover:bg-destructive/10' : 'hover:bg-accent/45',

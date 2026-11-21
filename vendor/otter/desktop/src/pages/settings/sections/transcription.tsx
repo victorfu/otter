@@ -91,11 +91,11 @@ export function TranscriptionSection({ vm, onOpenAutoExport }: { vm: SettingsVie
 						</span>
 					}>
 					{vm.preference.projectsPath && (
-						<Button variant="ghost" size="sm" onMouseDown={vm.resetProjectsPath}>
+						<Button variant="ghost" size="sm" onClick={vm.resetProjectsPath}>
 							{m.resetToDefault()}
 						</Button>
 					)}
-					<Button variant="outline" size="sm" onMouseDown={vm.changeProjectsPath}>
+					<Button variant="outline" size="sm" onClick={vm.changeProjectsPath}>
 						{m.changeProjectsFolder()}
 					</Button>
 				</SettingsRow>

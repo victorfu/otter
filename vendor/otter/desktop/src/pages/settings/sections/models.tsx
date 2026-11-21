@@ -68,6 +68,7 @@ export function ModelsSection({ vm, onOpenCatalog, focusDownload, onDownloadFocu
 
 	useInstallCompleted(() => vm.loadModels())
 
+
 	useEffect(() => {
 		if (!focusDownload) return
 		downloadUrlInput.current?.scrollIntoView({ block: 'center' })
@@ -93,7 +94,7 @@ export function ModelsSection({ vm, onOpenCatalog, focusDownload, onDownloadFocu
 	return (
 		<div className="space-y-6">
 			<SettingsGroup title={m.modelsOnThisComputer()}>
-				<SettingsRow label={m.selectModel()}>
+				<SettingsRow className="model-current" label={m.modelCatalogInUse()} description={currentModel?.name}>
 					{isRenaming ? (
 						<>
 							<Input
@@ -112,29 +113,7 @@ export function ModelsSection({ vm, onOpenCatalog, focusDownload, onDownloadFocu
 						</>
 					) : (
 						<>
-							<Select
-								value={vm.preference.modelPath ?? undefined}
-								onValueChange={vm.selectModel}
-								onOpenChange={(open) => {
-									if (open) vm.loadModels()
-								}}>
-								<SelectTrigger className={`w-56 ${rowControlClass}`}>
-									<SelectValue placeholder={m.selectModel()} />
-								</SelectTrigger>
-								<SelectContent>
-									{vm.models.map((model, index) => (
-										<SelectItem key={index} value={model.path}>
-											<span className="flex min-w-0 items-center gap-2">
-												<ModelGlyph name={model.name} className="shrink-0 text-muted-foreground" />
-												{/* Its own direction: a Latin name inside an RTL UI must lose its end to the ellipsis, not its start. */}
-												<span dir="auto" className="truncate">
-													{displayName(model)}
-												</span>
-											</span>
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
+							<strong dir="auto" className="min-w-0 break-words">{currentModel ? displayName(currentModel) : m.noModelSelected()}</strong>
 							<IconAction
 								variant="outline"
 								label={m.showInFolder()}
@@ -152,6 +131,11 @@ export function ModelsSection({ vm, onOpenCatalog, focusDownload, onDownloadFocu
 						</>
 					)}
 				</SettingsRow>
+				{vm.models.filter(model => model.path !== currentModel?.path).map(model => (
+					<SettingsRow key={model.path} label={<span className="flex items-center gap-2"><ModelGlyph name={model.name} /><bdi>{displayName(model)}</bdi></span>} description={model.name}>
+						<button className="model-use" onClick={() => vm.selectModel(model.path)}>{m.modelCatalogUse()}</button>
+					</SettingsRow>
+				))}
 				<CatalogRow onOpen={onOpenCatalog} />
 			</SettingsGroup>
 
