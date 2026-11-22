@@ -42,6 +42,7 @@ interface HotkeyContextType {
 	hotkeyNormalizeOutput: boolean
 	setHotkeyNormalizeOutput: (enabled: boolean) => void
 	isHotkeyRecording: boolean
+	toggleDictation: () => Promise<void>
 }
 
 const HotkeyContext = createContext<HotkeyContextType | null>(null)
@@ -343,6 +344,12 @@ export function HotkeyProvider({ children }: { children: ReactNode }) {
 		})
 	}, [])
 
+	/** A click (the floating dock) always toggles, whatever the shortcut's activation mode. */
+	const toggleDictation = useCallback(async () => {
+		if (isHotkeyRecordingRef.current) await handleHotkeyUp()
+		else await handleHotkeyDown()
+	}, [handleHotkeyDown, handleHotkeyUp])
+
 	const value: HotkeyContextType = {
 		hotkeyEnabled,
 		setHotkeyEnabled,
@@ -360,6 +367,7 @@ export function HotkeyProvider({ children }: { children: ReactNode }) {
 		hotkeyNormalizeOutput,
 		setHotkeyNormalizeOutput,
 		isHotkeyRecording,
+		toggleDictation,
 	}
 
 	return <HotkeyContext.Provider value={value}>{children}</HotkeyContext.Provider>

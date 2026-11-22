@@ -1,4 +1,5 @@
-import { listen, type UnlistenFn } from '@tauri-apps/api/event'
+import { type UnlistenFn } from '@tauri-apps/api/event'
+import { getCurrentWebview } from '@tauri-apps/api/webview'
 import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -19,13 +20,17 @@ export function useDropTarget(onPaths: (paths: string[]) => void) {
 	}, [onPaths])
 
 	useEffect(() => {
+		// Only this webview's drops: a global listen('tauri://drag-drop') also hears files dropped on
+		// the floating dock, which would queue them twice.
 		const unlisteners: Promise<UnlistenFn>[] = []
-		unlisteners.push(listen('tauri://drag-enter', () => setDragging(true)))
-		unlisteners.push(listen('tauri://drag-leave', () => setDragging(false)))
 		unlisteners.push(
-			listen<{ paths?: string[] }>('tauri://drag-drop', ({ payload }) => {
-				setDragging(false)
-				if (payload.paths?.length) onPathsRef.current(payload.paths)
+			getCurrentWebview().onDragDropEvent(({ payload }) => {
+				if (payload.type === 'enter') setDragging(true)
+				else if (payload.type === 'leave') setDragging(false)
+				else if (payload.type === 'drop') {
+					setDragging(false)
+					if (payload.paths.length) onPathsRef.current(payload.paths)
+				}
 			}),
 		)
 

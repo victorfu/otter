@@ -13,6 +13,7 @@ import { notifyTranscriptsChanged, saveTranscript, TRANSCRIPT_VERSION, type Tran
 import type { NamedPath, ProjectSource } from '~/lib/types'
 import { useConfirmExit } from '~/lib/use-confirm-exit'
 import { hotkeyRecordingActive } from '~/providers/hotkey'
+import { useRegisterDockSession } from '~/providers/floating-dock-bridge'
 import { useRecordingShortcut } from '~/providers/recording-shortcut'
 import { ErrorModalContext } from '~/providers/error-modal'
 import { usePreferenceProvider, type Preference } from '~/providers/preference'
@@ -108,15 +109,15 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 		[preference.advancedTranscribeOptions.includeSubFolders],
 	)
 
-	const dragging = useDropTarget(
-		useCallback(
-			(paths: string[]) => {
-				setPanel('none')
-				void enqueuePaths(paths, 'file')
-			},
-			[enqueuePaths],
-		),
+	/** Files dropped on this window or on the floating dock. */
+	const transcribeDropped = useCallback(
+		(paths: string[]) => {
+			setPanel('none')
+			void enqueuePaths(paths, 'file')
+		},
+		[enqueuePaths],
 	)
+	const dragging = useDropTarget(transcribeDropped)
 
 	/** Downloaded files remain explicitly URL-sourced after they land on disk. */
 	const transcribeDownloads = useCallback(
@@ -235,6 +236,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 		setPanel('none')
 		await enqueuePaths(picked, 'file')
 	}, [enqueuePaths])
+
+	useRegisterDockSession({ transcribePaths: transcribeDropped, browse })
 
 	const startNew = useCallback(() => {
 		queue.reset()
