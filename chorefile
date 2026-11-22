@@ -20,8 +20,12 @@ bin=desktop/src-tauri/binaries
 # Tauri's GStreamer plugin release, a tag of tauri-apps/tauri-gstreamer-plugin.
 gst_plugin=gst-plugin-tauri-v0.0.1
 
+# The distributed Chore binary can be built for musl even on a glibc host.
+# Rust determines both the native Cargo target and Tauri's sidecar suffix.
+rust_host=$(rustc --print host-tuple)
+
 # Compile the engine from the same checkout as the desktop client.
-task server-build target=$TRIPLE {
+task server-build target=$rust_host {
     exe=""
     if $1 == aarch64-apple-darwin {
         platform=darwin-arm64
@@ -45,7 +49,7 @@ task server-build target=$TRIPLE {
         chore fetch-libs $platform
         echo "$tag" > libs/lib/$platform-$tag
     }
-    if $1 == $TRIPLE {
+    if $1 == $rust_host {
         cargo build --locked --release -p otter-server
         binary=server/target/release/otter-server$exe
     } else {
@@ -57,7 +61,7 @@ task server-build target=$TRIPLE {
     copy $binary $bin/otter-server-$1$exe
 }
 
-task setup target=$TRIPLE {
+task setup target=$rust_host {
     server-build $1
     if $1 contains linux {
         gst-plugin $1
@@ -83,7 +87,7 @@ task setup target=$TRIPLE {
 }
 
 # Fetch Tauri's GStreamer plugin for asset:// playback into the Linux packages: gst-plugin <triple>.
-task gst-plugin target=$TRIPLE {
+task gst-plugin target=$rust_host {
     # WebKitGTK plays media through GStreamer, which cannot read the asset:// URLs the
     # player uses (#1711). tauri.linux.conf.json packages this file and linux_media.rs
     # points GStreamer at it. Pinned by hash: it is loaded into the app's web process.
