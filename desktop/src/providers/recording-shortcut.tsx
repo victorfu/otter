@@ -74,7 +74,12 @@ export function RecordingShortcutProvider({ children }: { children: ReactNode })
 				(device): device is AudioDevice => device != null,
 			)
 			if (selectedDevices.length === 0) throw new Error(m.noDefaultMicrophone())
-			const outcome = await invoke<StartRecordOutcome | null>('start_record', { devices: selectedDevices, recordingName: null })
+			const outcome = await invoke<StartRecordOutcome | null>('start_record', {
+				devices: selectedDevices,
+				recordingName: null,
+				liveMicGain: readConfig(CONFIG_KEYS.liveMicGain, false),
+				autoRecordingVolume: readConfig(CONFIG_KEYS.autoRecordingVolume, false),
+			})
 			if (options.microphone && microphoneMissing) {
 				const savedName = readConfig<string | null>(CONFIG_KEYS.inputDeviceName, null)
 				warnDeviceFallback(savedName ?? String(savedMicrophoneId), microphone?.name ?? null)

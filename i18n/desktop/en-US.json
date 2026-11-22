@@ -1,6 +1,10 @@
 {
 	"aiTextDestination": "AI summaries and dictation cleanup send the text they process to {service} at {server}.",
 	"aiTextDestinationInvalid": "Enter a valid AI server address to see where text will be sent.",
+	"liveMicGain": "Boost microphone while recording",
+	"liveMicGainInfo": "Apply up to 6 dB of gain as the microphone is recorded.",
+	"autoRecordingVolume": "Automatically adjust volume before saving",
+	"autoRecordingVolumeInfo": "Raise quiet microphone audio before saving. System audio keeps its original level.",
 	"aborting": "Aborting",
 	"advanced": "Advanced",
 	"apiAgentsDescription": "Run transcription from scripts, CLI tools, or AI agents.",

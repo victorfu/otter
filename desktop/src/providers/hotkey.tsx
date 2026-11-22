@@ -129,6 +129,8 @@ export function HotkeyProvider({ children }: { children: ReactNode }) {
 
 			await invoke('start_record', {
 				devices: [input],
+				liveMicGain: readConfig(CONFIG_KEYS.liveMicGain, false),
+				autoRecordingVolume: readConfig(CONFIG_KEYS.autoRecordingVolume, false),
 				recordingName: null,
 			})
 			indicatorSessionRef.current += 1

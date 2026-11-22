@@ -12,6 +12,7 @@ mod ffmpeg;
 mod keepawake;
 mod logging;
 mod meeting_prompt;
+mod mic_level;
 mod server;
 mod setup;
 mod startup_cleanup;

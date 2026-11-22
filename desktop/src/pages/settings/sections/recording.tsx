@@ -6,6 +6,8 @@ import ShortcutRecorder from '~/components/shortcut-recorder'
 import { MeetingServiceIcons } from '~/components/meeting-service-icons'
 import { Button } from '~/components/ui/button'
 import { Switch } from '~/components/ui/switch'
+import { CONFIG_KEYS } from '~/lib/config-keys'
+import { usePersisted } from '~/lib/config-store'
 import { getDefaultRecordingShortcut } from '~/lib/config'
 import type { PermissionStatus } from '~/lib/permissions'
 import { m } from '~/paraglide/messages.js'
@@ -147,6 +149,8 @@ function MeetPermissionRow({ enabled }: { enabled: boolean }) {
 }
 
 export function RecordingSection() {
+	const [liveMicGain, setLiveMicGain] = usePersisted(CONFIG_KEYS.liveMicGain, false)
+	const [autoVolume, setAutoVolume] = usePersisted(CONFIG_KEYS.autoRecordingVolume, false)
 	const shortcut = useRecordingShortcut()
 	const { meetingDetectionEnabled, setMeetingDetectionEnabled, autoTranscribeAfterRecording, setAutoTranscribeAfterRecording } = usePreferenceProvider()
 	const isMacOS = platform() === 'macos'
@@ -161,6 +165,12 @@ export function RecordingSection() {
 			</SettingsGroup>
 
 			<SettingsGroup title={m.recordingControls()}>
+				<SettingsRow label={m.liveMicGain()} description={m.liveMicGainInfo()}>
+					<Switch checked={liveMicGain} onCheckedChange={setLiveMicGain} aria-label={m.liveMicGain()} />
+				</SettingsRow>
+				<SettingsRow label={m.autoRecordingVolume()} description={m.autoRecordingVolumeInfo()}>
+					<Switch checked={autoVolume} onCheckedChange={setAutoVolume} aria-label={m.autoRecordingVolume()} />
+				</SettingsRow>
 				<SettingsRow label={m.autoTranscribeAfterRecording()} description={m.autoTranscribeAfterRecordingInfo()}>
 					<Switch
 						checked={autoTranscribeAfterRecording}

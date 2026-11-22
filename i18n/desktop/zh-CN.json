@@ -1,4 +1,8 @@
 {
+	"liveMicGain": "录音时提高麦克风音量",
+	"liveMicGainInfo": "录音时最多增加 6 dB，较大的声音会减少增益。",
+	"autoRecordingVolume": "保存前自动调整录音音量",
+	"autoRecordingVolumeInfo": "保存前适度提高偏低的麦克风音量，保留系统声音的原始音量。",
 	"aborting": "正在中止操作",
 	"advanced": "高级设置",
 	"apiAgentsDescription": "通过 Otter 的本地 API，在脚本、命令行工具或 AI 智能体中调用转录。",

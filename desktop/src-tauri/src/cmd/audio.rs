@@ -306,6 +306,8 @@ pub async fn start_record(
     app_handle: AppHandle,
     devices: Vec<AudioDevice>,
     recording_name: Option<String>,
+    auto_recording_volume: Option<bool>,
+    live_mic_gain: Option<bool>,
 ) -> CommandResult<StartRecordOutcome> {
     if devices.is_empty() {
         return Err(eyre!("At least one audio device is required").into());
@@ -321,10 +323,15 @@ pub async fn start_record(
     let mut outcome = StartRecordOutcome::default();
     let mut device_names = Vec::new();
 
+    let mut mic_index = None;
     for device in devices {
+        if device.is_input && auto_recording_volume == Some(true) {
+            mic_index = Some(wav_paths.len());
+        }
         tracing::debug!("Recording from device: {}", device.name);
         tracing::debug!("Device ID: {}", device.id);
 
+        let boost_input = device.is_input && live_mic_gain == Some(true);
         let (device, config, fallback) = if device.is_input {
             let (dev, fallback) = pick_device(&host, &device)?;
             let config = dev.default_input_config().context("Failed to get default input config")?;
@@ -345,7 +352,7 @@ pub async fn start_record(
         stream_writers.push(writer.clone());
         let writer_2 = writer.clone();
 
-        let stream = build_input_stream(&device, config, writer_2, meter.clone())?;
+        let stream = build_input_stream(&device, config, writer_2, meter.clone(), boost_input)?;
         stream.play()?;
         tracing::debug!("Stream started playing");
 
@@ -387,10 +394,26 @@ pub async fn start_record(
             return;
         };
 
+        let mut mic_warning = None;
+        let mic_boost = mic_index.and_then(|index| match crate::mic_level::measure(&wav_paths[index].0) {
+            Ok(crate::mic_level::MicLevel::Boost(db)) => Some((index, db)),
+            Ok(crate::mic_level::MicLevel::Keep) => None,
+            Ok(crate::mic_level::MicLevel::QuietBackground) => {
+                mic_warning =
+                    Some("No clear microphone activity detected. Check the microphone selection and input level.".to_owned());
+                None
+            }
+            Err(error) => {
+                tracing::warn!("Could not measure microphone volume: {error}");
+                mic_warning = Some("Could not measure microphone volume. Original level preserved.".to_owned());
+                None
+            }
+        });
+
         let (dst, mut warning) = if wav_paths.len() > 1 && wav_paths[0].1 > 0 && wav_paths[1].1 > 0 {
             let dst = get_otter_temp_folder().join(format!("{}.wav", random_string(10)));
             tracing::debug!("Merging WAV files");
-            match crate::ffmpeg::merge_wav_files(wav_paths[0].0.clone(), wav_paths[1].0.clone(), dst.clone()) {
+            match crate::ffmpeg::merge_wav_files(wav_paths[0].0.clone(), wav_paths[1].0.clone(), dst.clone(), mic_boost) {
                 Ok(()) if dst.is_file() => (dst, None),
                 Ok(()) => {
                     std::fs::remove_file(&dst).ok();
@@ -408,6 +431,9 @@ pub async fn start_record(
         } else {
             (best_raw, None)
         };
+        if warning.is_none() {
+            warning = mic_warning;
+        }
         // Peak was tracked in the capture callbacks, so this costs nothing at stop time.
         if let Some(message) = silence_warning(session_meter.session_peak(), &device_names) {
             tracing::warn!("{message}");
@@ -425,7 +451,10 @@ pub async fn start_record(
             .unwrap_or_else(get_local_time);
         let temp_dir = get_otter_temp_folder();
         let normalized = crate::cmd::files::available_path(&temp_dir, &recording_stem, "wav");
-        let output = match crate::ffmpeg::normalize(dst.clone(), normalized.clone(), None) {
+        let gain_args = mic_boost
+            .filter(|(index, _)| wav_paths[*index].0 == dst)
+            .map(|(_, db)| vec!["-af".to_string(), crate::ffmpeg::mic_gain_filter(db)]);
+        let output = match crate::ffmpeg::normalize(dst.clone(), normalized.clone(), gain_args) {
             Ok(()) if normalized.is_file() => normalized,
             result => {
                 std::fs::remove_file(&normalized).ok();
@@ -520,16 +549,18 @@ fn build_input_stream_typed<T>(
     config: SupportedStreamConfig,
     writer: WavWriterHandle,
     meter: Arc<LevelMeter>,
+    boost_input: bool,
 ) -> Result<Stream>
 where
-    T: SizedSample + hound::Sample + FromSample<T> + Mul<Output = T> + Copy,
+    T: SizedSample + hound::Sample + FromSample<f32> + Copy,
     f32: FromSample<T>,
 {
     let stream = device.build_input_stream(
         config.into(),
         move |data: &[T], _: &_| {
-            meter.push(buffer_peak(data));
-            write_input_data::<T, T>(data, &writer)
+            let peak = buffer_peak(data);
+            meter.push(if boost_input { boost_mic_sample(peak) } else { peak });
+            write_input_data(data, &writer, boost_input)
         },
         |err| tracing::error!("An error occurred on stream: {}", err),
         None,
@@ -542,12 +573,13 @@ fn build_input_stream(
     config: SupportedStreamConfig,
     writer: WavWriterHandle,
     meter: Arc<LevelMeter>,
+    boost_input: bool,
 ) -> Result<Stream> {
     match config.sample_format() {
-        cpal::SampleFormat::I8 => build_input_stream_typed::<i8>(device, config, writer, meter),
-        cpal::SampleFormat::I16 => build_input_stream_typed::<i16>(device, config, writer, meter),
-        cpal::SampleFormat::I32 => build_input_stream_typed::<i32>(device, config, writer, meter),
-        cpal::SampleFormat::F32 => build_input_stream_typed::<f32>(device, config, writer, meter),
+        cpal::SampleFormat::I8 => build_input_stream_typed::<i8>(device, config, writer, meter, boost_input),
+        cpal::SampleFormat::I16 => build_input_stream_typed::<i16>(device, config, writer, meter, boost_input),
+        cpal::SampleFormat::I32 => build_input_stream_typed::<i32>(device, config, writer, meter, boost_input),
+        cpal::SampleFormat::F32 => build_input_stream_typed::<f32>(device, config, writer, meter, boost_input),
         sample_format => bail!("Unsupported sample format '{}'", sample_format),
     }
 }
@@ -570,17 +602,31 @@ fn wav_spec_from_config(config: &cpal::SupportedStreamConfig) -> hound::WavSpec 
 }
 
 use crate::error::CommandResult;
-use std::ops::Mul;
 
-fn write_input_data<T, U>(input: &[T], writer: &WavWriterHandle)
+/// Double quiet samples (+6 dB). Above half scale on the output, a smooth
+/// knee progressively reduces gain so peaks stay within the PCM range.
+fn boost_mic_sample(sample: f32) -> f32 {
+    let magnitude = sample.abs();
+    if magnitude <= 0.25 {
+        return sample * 2.0;
+    }
+    let headroom = (1.0 - magnitude.min(1.0)) / 0.75;
+    (1.0 - 0.5 * headroom.powi(3)).copysign(sample)
+}
+
+fn write_input_data<T>(input: &[T], writer: &WavWriterHandle, boost_input: bool)
 where
-    T: Sample,
-    U: Sample + hound::Sample + FromSample<T> + Mul<Output = U> + Copy,
+    T: Sample + hound::Sample + FromSample<f32>,
+    f32: FromSample<T>,
 {
     if let Ok(mut guard) = writer.try_lock() {
         if let Some(writer) = guard.as_mut() {
             for &sample in input.iter() {
-                let sample: U = U::from_sample(sample);
+                let sample = if boost_input {
+                    T::from_sample(boost_mic_sample(f32::from_sample(sample)))
+                } else {
+                    sample
+                };
                 writer.write_sample(sample).ok();
             }
         }
@@ -668,6 +714,42 @@ mod tests {
         let names = vec!["Microsoft Teams Audio".to_string()];
         assert!(silence_warning(0.0, &names).unwrap().contains("Microsoft Teams Audio"));
         assert!(silence_warning(0.01, &names).is_none());
+    }
+
+    #[test]
+    fn live_gain_writes_the_capture_before_optional_save_time_measurement() {
+        let spec = hound::WavSpec {
+            channels: 1,
+            sample_rate: 16000,
+            bits_per_sample: 16,
+            sample_format: hound::SampleFormat::Int,
+        };
+        let input: Vec<i16> = (0..16000).map(|i| if i % 8000 < 4000 { 0 } else { 824 }).collect();
+        for live in [false, true] {
+            let path = std::env::temp_dir().join(format!("otter-gain-{}.wav", random_string(16)));
+            let writer = Arc::new(Mutex::new(Some(hound::WavWriter::create(&path, spec).unwrap())));
+            write_input_data(&input, &writer, live);
+            writer.lock().unwrap().take().unwrap().finalize().unwrap();
+            let level = crate::mic_level::measure(&path).unwrap();
+            let saved: Vec<i16> = hound::WavReader::open(&path)
+                .unwrap()
+                .samples()
+                .collect::<Result<_, _>>()
+                .unwrap();
+            std::fs::remove_file(path).unwrap();
+            if live {
+                assert_eq!(saved[4000], 1648);
+                assert!(matches!(level, crate::mic_level::MicLevel::Keep));
+            } else {
+                assert_eq!(saved, input);
+                assert!(matches!(level, crate::mic_level::MicLevel::Boost(12)));
+            }
+        }
+        for sample in [-1.0, -0.8, -0.25, 0.0, 0.25, 0.8, 1.0] {
+            let output = boost_mic_sample(sample);
+            assert!(output.abs() >= sample.abs() && output.abs() <= 1.0);
+            assert_eq!(output, -boost_mic_sample(-sample));
+        }
     }
 
     #[test]
