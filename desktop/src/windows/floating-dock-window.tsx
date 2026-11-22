@@ -13,9 +13,10 @@ import {
 	DOCK_STATUS_EVENT,
 	dockMenuItems,
 	formatShortcut,
-	isDrag,
+	requestUntilAnswered,
 	saveFloatingDockPosition,
 	setFloatingDockExpanded,
+	startsDrag,
 	type DockAction,
 	type DockMenuId,
 	type DockStatus,
@@ -99,10 +100,17 @@ export default function FloatingDockWindow() {
 	}, [direction, theme])
 
 	useEffect(() => {
-		const unlisten = listen<DockStatus>(DOCK_STATUS_EVENT, ({ payload }) => setStatus(payload))
-		// Ask only once the listener is in place, so the answer cannot be missed.
-		void unlisten.then(() => emit(DOCK_READY_EVENT))
+		let request: ReturnType<typeof requestUntilAnswered> | null = null
+		const unlisten = listen<DockStatus>(DOCK_STATUS_EVENT, ({ payload }) => {
+			request?.answered()
+			setStatus(payload)
+		})
+		// Ask only once the listener is in place, and keep asking until the main window answers.
+		void unlisten.then(() => {
+			request = requestUntilAnswered(() => void emit(DOCK_READY_EVENT))
+		})
 		return () => {
+			request?.stop()
 			unlisten.then((dispose) => dispose())
 		}
 	}, [])
@@ -171,7 +179,13 @@ export default function FloatingDockWindow() {
 
 	async function onBallPointerMove(event: PointerEvent<HTMLButtonElement>) {
 		const pointer = pointerRef.current
-		if (!pointer || pointer.dragging || !isDrag(pointer, { x: event.screenX, y: event.screenY })) return
+		if (!pointer || pointer.dragging) return
+		if (!(event.buttons & 1)) {
+			// The button was released outside the window; this is a hover, not a drag.
+			pointerRef.current = null
+			return
+		}
+		if (!startsDrag(pointer, { x: event.screenX, y: event.screenY }, event.buttons)) return
 		pointer.dragging = true
 		await collapse()
 		try {

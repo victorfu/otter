@@ -149,8 +149,9 @@ pub fn get_floating_dock_enabled(app: AppHandle) -> bool {
     is_enabled(&app)
 }
 
+/// Async on purpose: creating a webview window from a synchronous command deadlocks on Windows.
 #[tauri::command]
-pub fn set_floating_dock_enabled(app: AppHandle, enabled: bool) -> Result<(), String> {
+pub async fn set_floating_dock_enabled(app: AppHandle, enabled: bool) -> Result<(), String> {
     set_enabled(&app, enabled)
 }
 

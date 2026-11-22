@@ -116,12 +116,16 @@ pub fn apply(app: &AppHandle, enabled: bool, labels: TrayLabels) -> Result<()> {
             "show" => show_main_window(app),
             "hide" => hide_main_window(app),
             "floating-dock" => {
-                let enabled = !crate::floating_dock::is_enabled(app);
-                if let Err(error) = crate::floating_dock::set_enabled(app, enabled) {
-                    tracing::error!("could not toggle the floating dock: {error}");
-                    // The menu flipped its own check; put it back.
-                    sync_floating_dock(app, !enabled);
-                }
+                // Creating a webview window inside a menu event handler deadlocks on Windows.
+                let app = app.clone();
+                tauri::async_runtime::spawn(async move {
+                    let enabled = !crate::floating_dock::is_enabled(&app);
+                    if let Err(error) = crate::floating_dock::set_enabled(&app, enabled) {
+                        tracing::error!("could not toggle the floating dock: {error}");
+                        // The menu flipped its own check; put it back.
+                        sync_floating_dock(&app, !enabled);
+                    }
+                });
             }
             // Exit rather than close the window: the window's close handler hides it instead.
             "quit" => app.exit(0),

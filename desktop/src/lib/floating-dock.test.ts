@@ -1,6 +1,38 @@
 // @vitest-environment jsdom
-import { describe, expect, it } from 'vitest'
-import { dockMenuItems, formatShortcut, isDrag } from './floating-dock'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { dockMenuItems, formatShortcut, isDrag, requestUntilAnswered, startsDrag } from './floating-dock'
+
+describe('startsDrag', () => {
+	it('starts a drag only while the primary button is held', () => {
+		expect(startsDrag({ x: 0, y: 0 }, { x: 10, y: 0 }, 1)).toBe(true)
+		// Pressed at the edge and released outside the window: a later hover must not drag it.
+		expect(startsDrag({ x: 0, y: 0 }, { x: 10, y: 0 }, 0)).toBe(false)
+	})
+})
+
+describe('requestUntilAnswered', () => {
+	afterEach(() => vi.useRealTimers())
+
+	it('asks again until an answer arrives, then stops', () => {
+		vi.useFakeTimers()
+		const send = vi.fn()
+		const request = requestUntilAnswered(send, 1000)
+		expect(send).toHaveBeenCalledTimes(1)
+		vi.advanceTimersByTime(2000)
+		expect(send).toHaveBeenCalledTimes(3)
+		request.answered()
+		vi.advanceTimersByTime(5000)
+		expect(send).toHaveBeenCalledTimes(3)
+	})
+
+	it('stops asking when cancelled', () => {
+		vi.useFakeTimers()
+		const send = vi.fn()
+		requestUntilAnswered(send, 1000).stop()
+		vi.advanceTimersByTime(5000)
+		expect(send).toHaveBeenCalledTimes(1)
+	})
+})
 
 const idle = { recording: false, dictating: false, dictationEnabled: true }
 const keys = { recording: 'Alt+Shift+R', dictation: 'Ctrl+Space' }

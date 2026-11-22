@@ -42,6 +42,22 @@ export function isDrag(start: { x: number; y: number }, now: { x: number; y: num
 	return Math.hypot(now.x - start.x, now.y - start.y) > threshold
 }
 
+/** A drag needs the primary button still held (`PointerEvent.buttons`), not just a pointer that moved. */
+export function startsDrag(start: { x: number; y: number }, now: { x: number; y: number }, buttons: number): boolean {
+	return (buttons & 1) === 1 && isDrag(start, now)
+}
+
+/**
+ * Call `send` now and every `intervalMs` until `answered()`. The dock and the main window load in
+ * either order, so a single request can reach the main window before it listens.
+ */
+export function requestUntilAnswered(send: () => void, intervalMs = 1000): { answered: () => void; stop: () => void } {
+	send()
+	const timer = setInterval(send, intervalMs)
+	const stop = () => clearInterval(timer)
+	return { answered: stop, stop }
+}
+
 export function dockMenuItems(status: DockStatus, shortcuts: { recording: string | null; dictation: string | null }): DockMenuItem[] {
 	const item = (id: DockMenuId, action: DockAction): DockMenuItem => ({ id, action, active: false, shortcut: null, disabled: false })
 	return [
