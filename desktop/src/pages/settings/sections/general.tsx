@@ -1,9 +1,11 @@
+import { listen } from '@tauri-apps/api/event'
 import { disable, enable, isEnabled } from '@tauri-apps/plugin-autostart'
 import { Moon, Sun } from 'lucide-react'
 import { useContext, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { m } from '~/paraglide/messages.js'
 import * as config from '~/lib/config'
+import { DOCK_ENABLED_EVENT, getFloatingDockEnabled, setFloatingDockEnabled } from '~/lib/floating-dock'
 import { DisplayLanguageInput } from '~/components/display-language-input'
 import { Switch } from '~/components/ui/switch'
 import { UpdaterContext } from '~/providers/updater'
@@ -57,6 +59,36 @@ function LaunchAtStartupSwitch() {
 	return <Switch checked={enabled} disabled={busy} onCheckedChange={onCheckedChange} />
 }
 
+/** Rust owns the setting (it creates the window), and the tray can change it too. */
+function FloatingDockSwitch() {
+	const [enabled, setEnabled] = useState(false)
+
+	useEffect(() => {
+		let cancelled = false
+		getFloatingDockEnabled()
+			.then((value) => !cancelled && setEnabled(value))
+			.catch((error) => console.error('Could not read the floating dock setting:', error))
+		const unlisten = listen<boolean>(DOCK_ENABLED_EVENT, ({ payload }) => setEnabled(payload))
+		return () => {
+			cancelled = true
+			unlisten.then((dispose) => dispose())
+		}
+	}, [])
+
+	async function onCheckedChange(next: boolean) {
+		setEnabled(next)
+		try {
+			await setFloatingDockEnabled(next)
+		} catch (error) {
+			setEnabled(!next)
+			console.error('Could not change the floating dock setting:', error)
+			toast.error(String(error))
+		}
+	}
+
+	return <Switch checked={enabled} onCheckedChange={(next) => void onCheckedChange(next)} aria-label={m.floatingDock()} />
+}
+
 export function GeneralSection({ vm }: { vm: SettingsViewModel }) {
 	const themeLabels = { light: m.light, dark: m.dark } as const
 	const themeIcons = { light: Sun, dark: Moon } as const
@@ -100,6 +132,9 @@ export function GeneralSection({ vm }: { vm: SettingsViewModel }) {
 				</SettingsRow>
 				<SettingsRow label={m.launchAtStartup()} description={m.launchAtStartupInfo()}>
 					<LaunchAtStartupSwitch />
+				</SettingsRow>
+				<SettingsRow label={m.floatingDock()} description={m.floatingDockInfo()}>
+					<FloatingDockSwitch />
 				</SettingsRow>
 				<SettingsRow label={m.preventSleep()} description={m.generalAwakeInfo()}>
 					<Switch checked={vm.preference.preventSleep} onCheckedChange={vm.preference.setPreventSleep} />

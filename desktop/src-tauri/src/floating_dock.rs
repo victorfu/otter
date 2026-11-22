@@ -140,6 +140,7 @@ pub fn set_enabled(app: &AppHandle, enabled: bool) -> Result<(), String> {
             window.close().map_err(|error| error.to_string())?;
         }
     }
+    crate::tray::sync_floating_dock(app, enabled);
     app.emit(ENABLED_EVENT, enabled).map_err(|error| error.to_string())
 }
 
