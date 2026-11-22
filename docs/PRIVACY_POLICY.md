@@ -26,7 +26,7 @@ In **Settings → AI**, check the service and server address before enabling eit
 
 The receiving service controls how it processes and retains the text. This includes any names or medical details present in the text.
 
-**Usage analytics.** Builds configured for [Aptabase](https://aptabase.com/) can send usage and diagnostic events when analytics is enabled. Examples include transcription duration, segment count, errors, operating system and app version. Otter scrubs file paths from error messages. Events may include a random installation ID that links events from the same installation across days. Otter does not attach recordings or transcript text to analytics events. You can turn analytics off in Settings.
+The desktop app does not send usage statistics.
 
 ---
 

@@ -78,6 +78,12 @@ pub fn setup(app: &App) -> Result<(), Box<dyn std::error::Error>> {
     app.manage(crate::dictation_indicator::DictationIndicatorRuntime::default());
 
     let store = app.store(STORE_FILENAME)?;
+    // Remove the retired usage statistics preference and installation ID on upgrade.
+    let removed_id = store.delete("analytics_install_id");
+    let removed_preference = store.delete("analytics_enabled");
+    if removed_id || removed_preference {
+        store.save().log_error();
+    }
 
     // Setup logging to terminal
     {

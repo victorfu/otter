@@ -1,6 +1,5 @@
 import { ReactNode, SetStateAction, createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
-import { load } from '@tauri-apps/plugin-store'
 import { platform } from '@tauri-apps/plugin-os'
 import * as config from '~/lib/config'
 import { DEFAULT_AUTO_EXPORT, type AutoExportSettings } from '~/lib/auto-export'
@@ -127,8 +126,6 @@ export interface Preference {
 	recentLanguages: { code: string; ts: number }[]
 	setRecentLanguages: ModifyState<{ code: string; ts: number }[]>
 
-	analyticsEnabled: boolean
-	setAnalyticsEnabled: (value: boolean) => void
 
 	/** Auto-save every finished transcription into the projects folder (powers the Recents sidebar). */
 	saveTranscripts: boolean
@@ -276,7 +273,6 @@ export function PreferenceProvider({ children }: { children: ReactNode }) {
 	const [meetingDetectionEnabled, setMeetingDetectionEnabled] = usePersisted<boolean>(CONFIG_KEYS.meetingDetectionEnabled, false)
 	const [autoTranscribeAfterRecording, setAutoTranscribeAfterRecording] = usePersisted<boolean>(CONFIG_KEYS.autoTranscribeAfterRecording, false)
 
-	const [analyticsEnabled, setAnalyticsEnabledLocal] = useState(true)
 
 	// The background hold prevents idle sleep while allowing the display to turn off.
 	useEffect(() => {
@@ -302,22 +298,6 @@ export function PreferenceProvider({ children }: { children: ReactNode }) {
 				setModelMetadata(null)
 			})
 	}, [modelPath])
-
-	useEffect(() => {
-		load(config.storeFilename).then((store) => {
-			store.get<boolean>('analytics_enabled').then((val) => {
-				if (val !== null && val !== undefined) {
-					setAnalyticsEnabledLocal(val)
-				}
-			})
-		})
-	}, [])
-	const setAnalyticsEnabled = async (value: boolean) => {
-		setAnalyticsEnabledLocal(value)
-		const store = await load(config.storeFilename)
-		await store.set('analytics_enabled', value)
-		await store.save()
-	}
 
 	useEffect(() => {
 		setIsFirstRun(false)
@@ -454,8 +434,6 @@ export function PreferenceProvider({ children }: { children: ReactNode }) {
 		cpuVariant,
 		setCpuVariant,
 		setUnloadTimeoutMinutes,
-		analyticsEnabled,
-		setAnalyticsEnabled,
 		saveTranscripts,
 		setSaveTranscripts,
 		meetingDetectionEnabled,
