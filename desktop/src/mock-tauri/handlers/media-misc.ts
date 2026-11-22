@@ -26,6 +26,7 @@ const YTDLP_TICK_MS = 100
 let dictationIndicatorEnabled = false
 let meetingDetectionEnabled = false
 let floatingDockEnabled = false
+let floatingDockMenuVisible = false
 let meetingPromptState: { source: 'meet' | 'zoom' | 'teams' } | null = null
 
 function sleep(ms: number) {
@@ -244,13 +245,21 @@ export const mediaMiscHandlers: CommandHandlerMap = {
 	meeting_prompt_ready: () => undefined,
 
 	// --- Floating dock -----------------------------------------------------------
-	// The browser can't resize or move a window, so expanding only reports where the menu opens.
+	// The browser has no second window: open ?window=floating-dock-menu in its own tab to see the menu.
 
 	get_floating_dock_enabled: () => floatingDockEnabled,
 	set_floating_dock_enabled: (args) => {
 		floatingDockEnabled = Boolean(args?.enabled)
 		emitMockEvent('floating-dock-enabled', floatingDockEnabled)
 	},
-	set_floating_dock_expanded: () => ({ menuBelow: true, alignRight: false }),
+	toggle_floating_dock_menu: () => {
+		floatingDockMenuVisible = !floatingDockMenuVisible
+		emitMockEvent('floating-dock-menu-visible', floatingDockMenuVisible)
+	},
+	hide_floating_dock_menu: () => {
+		floatingDockMenuVisible = false
+		emitMockEvent('floating-dock-menu-visible', false)
+	},
+	floating_dock_menu_ready: () => undefined,
 	save_floating_dock_position: () => undefined,
 }

@@ -1,12 +1,58 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { dockMenuItems, formatShortcut, isDrag, requestUntilAnswered, startsDrag } from './floating-dock'
+import { createHoverCloser, dockMenuItems, formatShortcut, isDrag, requestUntilAnswered, startsDrag } from './floating-dock'
 
 describe('startsDrag', () => {
 	it('starts a drag only while the primary button is held', () => {
 		expect(startsDrag({ x: 0, y: 0 }, { x: 10, y: 0 }, 1)).toBe(true)
 		// Pressed at the edge and released outside the window: a later hover must not drag it.
 		expect(startsDrag({ x: 0, y: 0 }, { x: 10, y: 0 }, 0)).toBe(false)
+	})
+})
+
+describe('createHoverCloser', () => {
+	afterEach(() => vi.useRealTimers())
+
+	it('closes once the pointer has been outside both the ball and the menu for the delay', () => {
+		vi.useFakeTimers()
+		const onClose = vi.fn()
+		const closer = createHoverCloser(onClose, 700)
+		closer.set('menu', true)
+		closer.set('menu', false)
+		vi.advanceTimersByTime(699)
+		expect(onClose).not.toHaveBeenCalled()
+		vi.advanceTimersByTime(1)
+		expect(onClose).toHaveBeenCalledOnce()
+	})
+
+	it('stays open while the pointer moves from the ball to the menu', () => {
+		vi.useFakeTimers()
+		const onClose = vi.fn()
+		const closer = createHoverCloser(onClose, 700)
+		closer.set('ball', true)
+		closer.set('ball', false)
+		vi.advanceTimersByTime(300)
+		closer.set('menu', true)
+		vi.advanceTimersByTime(2000)
+		expect(onClose).not.toHaveBeenCalled()
+	})
+
+	it('closes when the menu opens and the pointer never reaches it', () => {
+		vi.useFakeTimers()
+		const onClose = vi.fn()
+		createHoverCloser(onClose, 700).reset()
+		vi.advanceTimersByTime(700)
+		expect(onClose).toHaveBeenCalledOnce()
+	})
+
+	it('does nothing after it is disposed', () => {
+		vi.useFakeTimers()
+		const onClose = vi.fn()
+		const closer = createHoverCloser(onClose, 700)
+		closer.set('menu', false)
+		closer.dispose()
+		vi.advanceTimersByTime(2000)
+		expect(onClose).not.toHaveBeenCalled()
 	})
 })
 

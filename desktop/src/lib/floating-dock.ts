@@ -5,6 +5,10 @@ export const DOCK_ACTION_EVENT = 'floating-dock-action'
 export const DOCK_STATUS_EVENT = 'floating-dock-status'
 export const DOCK_READY_EVENT = 'floating-dock-ready'
 export const DOCK_ENABLED_EVENT = 'floating-dock-enabled'
+/** From Rust: whether the menu window is showing. */
+export const DOCK_MENU_VISIBLE_EVENT = 'floating-dock-menu-visible'
+/** From the ball window to the menu window: the pointer entered or left the ball. */
+export const DOCK_BALL_HOVER_EVENT = 'floating-dock-ball-hover'
 
 export type DockAction =
 	| { type: 'toggle-recording' }
@@ -19,11 +23,6 @@ export interface DockStatus {
 	recording: boolean
 	dictating: boolean
 	dictationEnabled: boolean
-}
-
-export interface Placement {
-	menuBelow: boolean
-	alignRight: boolean
 }
 
 export type DockMenuId = 'recording' | 'dictation' | 'browse' | 'open-main' | 'settings' | 'hide-dock'
@@ -58,6 +57,41 @@ export function requestUntilAnswered(send: () => void, intervalMs = 1000): { ans
 	return { answered: stop, stop }
 }
 
+export type HoverSource = 'ball' | 'menu'
+
+/**
+ * Closes the menu once the pointer has been outside both the ball and the menu for `delayMs`. The
+ * two live in separate windows, so moving from one to the other is a leave followed by an enter.
+ */
+export function createHoverCloser(onClose: () => void, delayMs: number) {
+	const inside: Record<HoverSource, boolean> = { ball: false, menu: false }
+	let timer: ReturnType<typeof setTimeout> | null = null
+	const cancel = () => {
+		if (timer) clearTimeout(timer)
+		timer = null
+	}
+	const schedule = () => {
+		cancel()
+		if (inside.ball || inside.menu) return
+		timer = setTimeout(() => {
+			timer = null
+			onClose()
+		}, delayMs)
+	}
+	return {
+		set(source: HoverSource, isInside: boolean) {
+			inside[source] = isInside
+			schedule()
+		},
+		/** The menu just opened: forget earlier hovers and start counting. */
+		reset() {
+			inside.menu = false
+			schedule()
+		},
+		dispose: cancel,
+	}
+}
+
 export function dockMenuItems(status: DockStatus, shortcuts: { recording: string | null; dictation: string | null }): DockMenuItem[] {
 	const item = (id: DockMenuId, action: DockAction): DockMenuItem => ({ id, action, active: false, shortcut: null, disabled: false })
 	return [
@@ -88,6 +122,7 @@ export function formatShortcut(accelerator: string, isMac: boolean): string {
 
 export const getFloatingDockEnabled = () => invoke<boolean>('get_floating_dock_enabled')
 export const setFloatingDockEnabled = (enabled: boolean) => invoke<void>('set_floating_dock_enabled', { enabled })
-export const setFloatingDockExpanded = (expanded: boolean, menuHeight: number) =>
-	invoke<Placement>('set_floating_dock_expanded', { expanded, menuHeight })
+export const toggleFloatingDockMenu = () => invoke<void>('toggle_floating_dock_menu')
+export const hideFloatingDockMenu = () => invoke<void>('hide_floating_dock_menu')
+export const floatingDockMenuReady = (height: number) => invoke<void>('floating_dock_menu_ready', { height })
 export const saveFloatingDockPosition = () => invoke<void>('save_floating_dock_position')
