@@ -9,6 +9,7 @@ mod diagnostics;
 mod dictation_indicator;
 mod error;
 mod ffmpeg;
+mod floating_dock;
 mod keepawake;
 mod logging;
 mod meeting_prompt;
@@ -157,6 +158,10 @@ async fn main() -> Result<()> {
             dictation_indicator::get_dictation_indicator_state,
             dictation_indicator::dictation_indicator_ready,
             dictation_indicator::hide_dictation_indicator,
+            floating_dock::get_floating_dock_enabled,
+            floating_dock::set_floating_dock_enabled,
+            floating_dock::set_floating_dock_expanded,
+            floating_dock::save_floating_dock_position,
             meeting_prompt::get_meeting_detection_enabled,
             meeting_prompt::set_meeting_detection_enabled,
             meeting_prompt::get_meeting_prompt_state,

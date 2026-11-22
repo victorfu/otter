@@ -76,6 +76,7 @@ pub fn setup(app: &App) -> Result<(), Box<dyn std::error::Error>> {
     // Manage server state
     app.manage(Mutex::new(ServerState { process: None }));
     app.manage(crate::dictation_indicator::DictationIndicatorRuntime::default());
+    app.manage(crate::floating_dock::FloatingDockRuntime::default());
 
     let store = app.store(STORE_FILENAME)?;
     // Remove the retired usage statistics preference and installation ID on upgrade.
@@ -236,6 +237,7 @@ pub fn setup(app: &App) -> Result<(), Box<dyn std::error::Error>> {
         }
         crate::updater::start(app.handle());
         crate::dictation_indicator::initialize(app.handle());
+        crate::floating_dock::initialize(app.handle());
         if let Err(error) = crate::meeting_prompt::initialize(app.handle()) {
             tracing::error!("could not initialize meeting prompt: {error}");
         }
