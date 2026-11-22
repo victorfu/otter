@@ -70,10 +70,11 @@ export default function QuietRow() {
 						</span>
 						<WorkspaceIcon name="next" className="h-3.5 w-3.5" />
 					</Button>
-					<Button variant="ghost" size="sm" className="mt-1 w-full justify-between rounded-xl px-3" onClick={() => openSection('models')}>
-						<span className="flex items-center gap-2">
-							<WorkspaceIcon name="model" className="h-3.5 w-3.5 text-muted-foreground" />
-							<span className="min-w-0 truncate">{m.selectModel()}{preference.modelPath && <small className="block truncate font-normal text-muted-foreground">{preference.modelPath.split(/[\\/]/).pop()}</small>}</span>
+					<Button variant="ghost" size="sm" className="mt-1 h-auto min-h-9 w-full rounded-xl px-3 py-1.5 text-start" onClick={() => openSection('models')}>
+						<WorkspaceIcon name="model" className="h-3.5 w-3.5 text-muted-foreground" />
+						<span className="min-w-0 flex-1">
+							<span className="block truncate">{m.selectModel()}</span>
+							{preference.modelPath && <small className="block truncate font-normal text-muted-foreground">{preference.modelPath.split(/[\\/]/).pop()}</small>}
 						</span>
 						<WorkspaceIcon name="next" className="h-3.5 w-3.5" />
 					</Button>
