@@ -191,9 +191,16 @@ pub async fn transcribe(
     let abort = Arc::new(AtomicBool::new(false));
     let _abort_listener = AbortListener::register(&app_handle, transcription_id.clone(), abort.clone());
 
+    // Traditional Chinese (Taiwan) is transcribed as Chinese, then converted segment by segment.
+    let requested_lang = options.lang.clone();
+    let options = TranscribeOptions {
+        lang: crate::chinese_variant::engine_language(options.lang.as_deref()),
+        ..options
+    };
+
     let mut retried = false;
     loop {
-        let failure = match run_attempt(&app_handle, &options, &server_state, &abort).await {
+        let failure = match run_attempt(&app_handle, &options, requested_lang.as_deref(), &server_state, &abort).await {
             Ok(transcript) => return Ok(transcript),
             Err(failure) => failure,
         };
@@ -234,9 +241,11 @@ pub async fn transcribe(
 }
 
 /// One pass over the server's event stream, forwarding progress and segments to the window.
+/// `requested_lang` is the language the user picked, before `engine_language` mapped it.
 async fn run_attempt(
     app_handle: &tauri::AppHandle,
     options: &TranscribeOptions,
+    requested_lang: Option<&str>,
     server_state: &State<'_, Mutex<ServerState>>,
     abort: &AtomicBool,
 ) -> Result<Transcript, AttemptError> {
@@ -285,7 +294,10 @@ async fn run_attempt(
                     speaker,
                     words,
                 } => {
-                    let segment = Segment::from_server(start, end, text, speaker, words);
+                    let segment = crate::chinese_variant::localize_segment(
+                        Segment::from_server(start, end, text, speaker, words),
+                        requested_lang,
+                    );
                     app_handle.emit_to("main", "new_segment", segment.clone()).log_error();
                     segments.push(segment);
                 }

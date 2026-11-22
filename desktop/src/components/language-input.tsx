@@ -2,6 +2,7 @@ import { subDays, isAfter } from 'date-fns'
 import { useMemo, useState } from 'react'
 import { m } from '~/paraglide/messages.js'
 import { getI18nLanguageName, getLocalizedLanguageName } from '~/lib/i18n'
+import { TAIWAN_TRADITIONAL, transcriptionLanguages } from '~/lib/model'
 import { cn } from '~/lib/style'
 import { usePreferenceProvider } from '~/providers/preference'
 import { Label } from '~/components/ui/label'
@@ -38,13 +39,17 @@ export default function LanguageInput({ variant = 'default' }: LanguageInputProp
 				return code
 			}
 		}
-		const list = (capabilities?.languages ?? []).map((code) => ({
-			label: of(displayNames, code),
-			keywords: [of(englishNames, code)],
-			flagCode: code,
-			flagName: of(englishNames, code),
-			code,
-		}))
+		const list = transcriptionLanguages(capabilities?.languages ?? []).map((code) => {
+			// "Traditional Chinese (Taiwan)" reads clearer than the region-only "Chinese (Taiwan)".
+			const named = code === TAIWAN_TRADITIONAL ? 'zh-Hant-TW' : code
+			return {
+				label: of(displayNames, named),
+				keywords: code === TAIWAN_TRADITIONAL ? [of(englishNames, named), '繁體中文', '台灣', 'Taiwan'] : [of(englishNames, code)],
+				flagCode: code,
+				flagName: of(englishNames, named),
+				code,
+			}
+		})
 		list.sort((a, b) => a.label.localeCompare(b.label))
 		return list
 	}, [capabilities, preference.displayLanguage])

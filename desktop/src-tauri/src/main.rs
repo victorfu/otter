@@ -4,6 +4,7 @@
 mod cli;
 mod cmd;
 mod config;
+mod chinese_variant;
 mod config_watcher;
 mod diagnostics;
 mod dictation_indicator;

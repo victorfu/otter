@@ -75,6 +75,7 @@ enigo = "0.3"
 # The updater keeps a downloaded package on disk between runs and checks its signature again before use
 minisign-verify = "0.2"
 base64 = "0.22"
+ferrous-opencc = { version = "0.4.0", default-features = false, features = ["s2t-conversion"] }
 
 # Linux
 [target.'cfg(target_os = "linux")'.dependencies]

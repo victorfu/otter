@@ -178,6 +178,24 @@ export interface ModelMetadata {
 	capabilities: ModelCapabilities
 }
 
+/**
+ * Traditional Chinese as used in Taiwan. No engine knows it: the app transcribes as Chinese (`zh`)
+ * and converts the text with OpenCC's s2twp rules (see `chinese_variant.rs`).
+ */
+export const TAIWAN_TRADITIONAL = 'zh-TW'
+
+/** The languages a model can transcribe, plus Traditional Chinese (Taiwan) wherever Chinese is one. */
+export function transcriptionLanguages(languages: string[]): string[] {
+	const zh = languages.indexOf('zh')
+	if (zh === -1 || languages.includes(TAIWAN_TRADITIONAL)) return languages
+	return [...languages.slice(0, zh + 1), TAIWAN_TRADITIONAL, ...languages.slice(zh + 1)]
+}
+
+/** Whether the model can transcribe in `lang` (`auto` needs language detection). */
+export function supportsLanguage(lang: string, capabilities: ModelCapabilities): boolean {
+	return lang === 'auto' ? capabilities.language_detection : transcriptionLanguages(capabilities.languages).includes(lang)
+}
+
 /** The subset of transcribe options that only some engines honour. */
 interface EngineSpecificOptions {
 	init_prompt?: string

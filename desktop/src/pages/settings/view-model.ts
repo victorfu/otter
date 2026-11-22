@@ -20,7 +20,7 @@ import { useNavigate } from 'react-router-dom'
 import { load } from '@tauri-apps/plugin-store'
 import { useStoreValue } from '~/lib/use-store-value'
 import { collectLogs, getPrettyVersion, getVersionNumber } from '~/lib/logs'
-import { cleanupPartialDownloads, isModelFileUsable, listInstalledModels, type InstalledModel, type ModelMetadata } from '~/lib/model'
+import { cleanupPartialDownloads, isModelFileUsable, listInstalledModels, supportsLanguage, type InstalledModel, type ModelMetadata } from '~/lib/model'
 import { buildSkill, installSkill, type SkillTarget } from '~/lib/skill'
 
 export interface GpuDevice {
@@ -237,9 +237,7 @@ export function viewModel() {
 	function applyModelLanguage(metadata: ModelMetadata | null) {
 		if (!metadata) return
 		const capabilities = metadata.capabilities
-		const currentLanguage = preference.modelOptions.lang
-		const isSupported = currentLanguage === 'auto' ? capabilities.language_detection : capabilities.languages.includes(currentLanguage)
-		if (isSupported) return
+		if (supportsLanguage(preference.modelOptions.lang, capabilities)) return
 		preference.setModelOptions({
 			...preference.modelOptions,
 			lang: capabilities.language_detection ? 'auto' : (capabilities.languages[0] ?? 'en'),
