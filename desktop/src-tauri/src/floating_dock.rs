@@ -78,8 +78,23 @@ fn monitor_at(window: &WebviewWindow, x: f64, y: f64) -> Result<Monitor, String>
 
 /// A transparent, always-on-top window that never takes focus: clicking the dock must leave the
 /// app the user is typing in focused, or dictation would type into the wrong place.
-fn build_dock_window(app: &AppHandle, label: &str, page: &str, width: f64, height: f64) -> Result<WebviewWindow, String> {
-    let window = WebviewWindowBuilder::new(app, label, WebviewUrl::App(format!("index.html?window={page}").into()))
+///
+/// `position` (logical pixels) makes the window visible from the start. On Windows the webview
+/// registers its file-drop target while it is being built, and a window built hidden has no
+/// WebView2 child window to register on yet, so it never accepts dropped files.
+fn build_dock_window(
+    app: &AppHandle,
+    label: &str,
+    page: &str,
+    width: f64,
+    height: f64,
+    position: Option<(f64, f64)>,
+) -> Result<WebviewWindow, String> {
+    let mut builder = WebviewWindowBuilder::new(app, label, WebviewUrl::App(format!("index.html?window={page}").into()));
+    if let Some((x, y)) = position {
+        builder = builder.position(x, y);
+    }
+    let window = builder
         .inner_size(width, height)
         .decorations(false)
         .resizable(false)
@@ -91,7 +106,7 @@ fn build_dock_window(app: &AppHandle, label: &str, page: &str, width: f64, heigh
         .skip_taskbar(true)
         .transparent(true)
         .shadow(false)
-        .visible(false)
+        .visible(position.is_some())
         .on_navigation(crate::setup::navigation_guard(app))
         .build()
         .map_err(|error| error.to_string())?;
@@ -112,15 +127,14 @@ fn build_dock_window(app: &AppHandle, label: &str, page: &str, width: f64, heigh
     Ok(window)
 }
 
+/// The ball is built visible at its place (see `build_dock_window`) so it accepts dropped files.
 fn create_ball_window(app: &AppHandle) -> Result<WebviewWindow, String> {
-    let window = build_dock_window(app, BALL_LABEL, "floating-dock", SLOT, SLOT)?;
-    let primary = window
+    let primary = app
         .primary_monitor()
         .ok()
         .flatten()
-        .or_else(|| window.current_monitor().ok().flatten())
         .ok_or_else(|| "no monitor to place the floating dock on".to_string())?;
-    let work_areas: Vec<Rect> = window
+    let work_areas: Vec<Rect> = app
         .available_monitors()
         .map_err(|error| error.to_string())?
         .iter()
@@ -128,10 +142,11 @@ fn create_ball_window(app: &AppHandle) -> Result<WebviewWindow, String> {
         .collect();
     let scale = primary.scale_factor();
     let (x, y) = restore_position(saved_position(app), SLOT * scale, &work_areas, work_area(&primary), (EDGE - PAD) * scale);
+    let window = build_dock_window(app, BALL_LABEL, "floating-dock", SLOT, SLOT, Some((x / scale, y / scale)))?;
+    // The builder takes logical pixels; set the exact physical spot in case the monitor's scale differs.
     window
         .set_position(PhysicalPosition::new(x.round() as i32, y.round() as i32))
         .map_err(|error| error.to_string())?;
-    window.show().map_err(|error| error.to_string())?;
     Ok(window)
 }
 
@@ -142,7 +157,7 @@ fn create_menu_window(app: &AppHandle) -> Result<WebviewWindow, String> {
         .menu_height
         .lock()
         .map_err(|error| error.to_string())?;
-    build_dock_window(app, MENU_LABEL, "floating-dock-menu", MENU_WIDTH + 2.0 * PAD, height + 2.0 * PAD)
+    build_dock_window(app, MENU_LABEL, "floating-dock-menu", MENU_WIDTH + 2.0 * PAD, height + 2.0 * PAD, None)
 }
 
 fn create_windows(app: &AppHandle) -> Result<(), String> {
