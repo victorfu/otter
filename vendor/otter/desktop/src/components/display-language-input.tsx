@@ -30,9 +30,9 @@ export function DisplayLanguageInput({ value, onSelect, className }: { value: st
 		return Object.entries(supportedLanguages)
 			.map(([code, name]) => ({
 				code,
-				label: code === getLocale() ? getLocalizedLanguageName(name) : endonym(code),
-				keywords: [name, endonym(code), code.split('-')[0]],
-				flagCode: code.split('-')[0],
+				label: code === 'zh-TW' ? '繁體中文（台灣）' : code === getLocale() ? getLocalizedLanguageName(name) : endonym(code),
+				keywords: code === 'zh-TW' ? [name, '臺灣', 'Taiwan', 'Traditional Chinese'] : [name, endonym(code)],
+				flagCode: code === 'zh-TW' ? code : code.split('-')[0],
 				flagName: baseName(name),
 			}))
 			.sort((a, b) => a.label.localeCompare(b.label))

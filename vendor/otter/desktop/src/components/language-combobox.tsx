@@ -53,6 +53,7 @@ interface LanguageComboboxProps {
 
 // Whisper reports languages either as ISO codes or as lowercase English names — key both.
 const FLAGS: Record<string, string> = {
+	'zh-tw': '🇹🇼',
 	en: '🇺🇸',
 	english: '🇺🇸',
 	es: '🇪🇸',
@@ -289,7 +290,7 @@ export function LanguageCombobox({
 						if (!open) setOpen(true)
 					}}
 					className={cn(
-						'flex items-center gap-2 border text-start transition-colors duration-150',
+						'language-picker flex items-center gap-2 border text-start transition-colors duration-150',
 						prominent ? 'h-9 w-[200px] rounded-full bg-card px-3 text-[13px] font-medium' : 'h-9 w-full rounded-lg bg-transparent px-3 text-sm',
 						open ? 'border-ring/60' : 'cursor-pointer border-border hover:bg-muted/60',
 						className,
