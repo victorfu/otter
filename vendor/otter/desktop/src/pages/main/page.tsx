@@ -153,11 +153,16 @@ function PlayerSlot() {
 }
 
 function Shell() {
-	const { mode } = useSession()
+	const { mode, queue, browse, startNew, collectingFolder, recording, link } = useSession()
 	const showSidebar = useShowSidebar()
 
 	return (
 		<Layout
+			projectName={queue.selectedJob?.name}
+			canSearch={Boolean(queue.selectedJob?.segments.length)}
+			onNew={startNew}
+			onBrowse={browse}
+			canBrowse={!collectingFolder && !recording.isRecording && !link.downloadingAudio}
 			sidebarExpanded={showSidebar}
 			bottomBar={<PlayerSlot />}
 			sidebar={

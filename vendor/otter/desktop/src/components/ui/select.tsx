@@ -52,6 +52,7 @@ const SelectContent = React.forwardRef<React.ElementRef<typeof SelectPrimitive.C
 	({ className, children, position = 'popper', ...props }, ref) => (
 		<SelectPrimitive.Portal>
 			<SelectPrimitive.Content
+				data-native-float=""
 				ref={ref}
 				className={cn(
 					'relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-lg border border-border/70 bg-popover/95 text-popover-foreground shadow-md data-[state=open]:animate-in-smooth data-[state=closed]:animate-out-smooth origin-[--radix-select-content-transform-origin]',

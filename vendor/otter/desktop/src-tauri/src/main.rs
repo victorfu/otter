@@ -55,6 +55,7 @@ async fn main() -> Result<()> {
 
     #[allow(unused_mut)]
     let mut builder = tauri::Builder::default()
+        .manage(std::sync::Mutex::new(setup::WindowChrome::default()))
         .manage(tray::TrayState::default())
         .manage(keepawake::KeepAwake::new())
         .manage(updater::Updater::default())
@@ -113,6 +114,7 @@ async fn main() -> Result<()> {
             cmd::config::get_config_path,
             cmd::skill::install_agent_skill,
             cmd::skill::get_agent_paths,
+            setup::window_chrome,
             tray::set_tray,
             cmd::transcribe::transcribe,
             cmd::files::glob_files,
@@ -214,3 +216,6 @@ async fn main() -> Result<()> {
     });
     Ok(())
 }
+
+#[cfg(windows)]
+mod window_frame;

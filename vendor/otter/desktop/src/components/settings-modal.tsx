@@ -14,9 +14,10 @@ export default function SettingsModal({ visible, setVisible, scrollTo }: Setting
 	return (
 		<Dialog.Root open={visible} onOpenChange={setVisible}>
 			<Dialog.Portal>
+				<Dialog.Overlay className="preferences-scrim" />
 				<Dialog.Content
 					aria-describedby={undefined}
-					className="fixed inset-0 z-50 bg-background text-foreground"
+					className="preferences-panel text-foreground"
 					onOpenAutoFocus={event => event.preventDefault()}
 					onCloseAutoFocus={event => {
 						event.preventDefault()

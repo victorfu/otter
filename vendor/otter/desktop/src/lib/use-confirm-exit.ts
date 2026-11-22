@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
+import { ask } from '@tauri-apps/plugin-dialog'
 import { exit } from '@tauri-apps/plugin-process'
 import { m } from '~/paraglide/messages.js'
 import { UnlistenFn } from '@tauri-apps/api/event'
@@ -13,6 +14,11 @@ export function useConfirmExit(closeToTray: boolean, shouldConfirm: boolean) {
 	useEffect(() => {
 		let unlistenFn: UnlistenFn | null = null
 		const currentWindow = getCurrentWebviewWindow()
+		let disposed = false
+		async function quit() {
+			if (!shouldConfirm || await ask(m.confirmExit(), { title: m.appTitle(), kind: 'warning' })) await exit(0)
+		}
+		window.addEventListener('otter:quit', quit)
 		currentWindow
 			.onCloseRequested(async (event) => {
 				if (closeToTray) {
@@ -21,18 +27,17 @@ export function useConfirmExit(closeToTray: boolean, shouldConfirm: boolean) {
 					await currentWindow.hide().catch((error) => console.error('failed to hide the window:', error))
 					return
 				}
-				if (shouldConfirm) {
-					event.preventDefault()
-					if (await confirm(m.confirmExit())) {
-						await exit(0)
-					}
-				} else {
-					await exit(0)
-				}
+				if (shouldConfirm) event.preventDefault()
+				await quit()
 			})
 			.then((unlisten) => {
-				unlistenFn = unlisten
+				if (disposed) unlisten()
+				else unlistenFn = unlisten
 			})
-		return () => unlistenFn?.()
+		return () => {
+			disposed = true
+			window.removeEventListener('otter:quit', quit)
+			unlistenFn?.()
+		}
 	}, [closeToTray, shouldConfirm])
 }

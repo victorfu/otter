@@ -14,7 +14,6 @@ import {
 	Sparkles,
 	Terminal,
 	Wrench,
-	ChevronRight,
 } from 'lucide-react'
 import { openUrl } from '@tauri-apps/plugin-opener'
 import * as config from '~/lib/config'
@@ -88,15 +87,15 @@ export default function SettingsPage({ setVisible, scrollTo }: SettingsPageProps
 		'ai-dictation': { section: 'ai', title: m.aiDictationTask() },
 	}
 	const isSubpage = (value: string | undefined): value is Subpage => value !== undefined && value in subpages
-	const [activeSection, setActiveSection] = useState<SectionId | null>(
-		isSubpage(scrollTo) ? subpages[scrollTo].section : sections.find(section => section.id === scrollTo)?.id ?? null,
+	const [activeSection, setActiveSection] = useState<SectionId>(
+		isSubpage(scrollTo) ? subpages[scrollTo].section : sections.find(section => section.id === scrollTo)?.id ?? 'general',
 	)
 	const [subpage, setSubpage] = useState<Subpage | null>(isSubpage(scrollTo) ? scrollTo : null)
 	const [focusModelDownload, setFocusModelDownload] = useState(false)
 	const [headerSlot, setHeaderSlot] = useState<HTMLDivElement | null>(null)
 	const scrollArea = useRef<HTMLDivElement>(null)
 	const heading = useRef<HTMLHeadingElement>(null)
-	const activeGroup = groups.find(group => group.sections.some(section => section.id === activeSection))
+	const activeGroup = groups.find(group => group.sections.some(section => section.id === activeSection))!
 	const sectionName = sections.find(section => section.id === activeSection)?.label
 	const title = subpage ? subpages[subpage].title : sectionName ?? m.settings()
 
@@ -105,7 +104,7 @@ export default function SettingsPage({ setVisible, scrollTo }: SettingsPageProps
 		heading.current?.focus({ preventScroll: true })
 	}, [activeSection, subpage])
 
-	function goTo(section: SectionId | null) {
+	function goTo(section: SectionId) {
 		setSubpage(null)
 		setActiveSection(section)
 	}
@@ -117,56 +116,33 @@ export default function SettingsPage({ setVisible, scrollTo }: SettingsPageProps
 
 	return (
 		<div className="settings-workspace">
-			<header className="settings-bar" data-tauri-drag-region>
+			<header className="settings-bar">
 				<Button variant="ghost" onClick={() => setVisible(false)}>
 					<ArrowLeft className="size-4 rtl:rotate-180" />{m.backToWorkspace()}
 				</Button>
-				{activeSection && (
-						<div className="settings-path">
-							<button onClick={() => goTo(null)}>{m.settings()}</button>
-							<span aria-hidden>/</span><span>{activeGroup?.label}</span>
-							{subpage && <><span aria-hidden>/</span><button onClick={() => setSubpage(null)}>{sectionName}</button></>}
-						</div>
-					)}
 				<button className="settings-version" title={m.whatsNew()} onClick={() => openUrl(config.changelogURL(vm.appVersionNumber))}>
 					{vm.appVersion}<ArrowUpRight className="size-3" />
 				</button>
 			</header>
+			<nav className="preference-tabs" aria-label={m.settings()}>
+				{groups.map(group => (
+					<button key={group.sections[0].id} type="button" aria-current={group === activeGroup ? 'page' : undefined}
+						onClick={() => goTo(group.sections[0].id)}>
+						{group.sections[0].icon}<span>{group.label}</span>
+					</button>
+				))}
+			</nav>
 			<div ref={scrollArea} className="settings-scroll">
 				<div className="settings-sheet">
+					{activeGroup.sections.length > 1 && <nav className="preference-segments" aria-label={activeGroup.label}>
+						{activeGroup.sections.map(section => <button type="button" key={section.id} aria-current={section.id === activeSection ? 'page' : undefined}
+							onClick={() => goTo(section.id)}>{section.label}</button>)}
+					</nav>}
 					<div className="settings-title">
+						{subpage && <Button variant="ghost" size="iconSm" aria-label={m.back()} onClick={() => setSubpage(null)}><ArrowLeft /></Button>}
 						<Title ref={heading} tabIndex={-1}>{title}</Title>
-						<div ref={setHeaderSlot} />
+						<div ref={setHeaderSlot} className="ms-auto" />
 					</div>
-					{activeGroup ? (
-						<>
-							<nav className="settings-categories" aria-label={m.settings()}>
-								{groups.map(group => <button key={group.sections[0].id} aria-current={activeGroup === group ? 'true' : undefined}
-									onClick={() => goTo(group.sections[0].id)}>{group.label}</button>)}
-							</nav>
-							<select className="settings-picker" aria-label={m.settings()} value={activeSection ?? ''} onChange={event => goTo(event.target.value as SectionId)}>
-								{groups.map(group => <optgroup key={group.label} label={group.label}>
-									{group.sections.map(section => <option key={section.id} value={section.id}>{section.label}</option>)}
-								</optgroup>)}
-							</select>
-							{activeGroup.sections.length > 1 && <nav className="settings-sections" aria-label={activeGroup.label}>
-								{activeGroup.sections.map(section => <button key={section.id} aria-current={activeSection === section.id ? 'page' : undefined}
-									onClick={() => goTo(section.id)}>{section.icon}{section.label}</button>)}
-							</nav>}
-						</>
-					) : (
-						<div className="settings-index">
-							{groups.map(group => <section key={group.label}>
-								<h3>{group.label}</h3>
-								{group.sections.map(section => <button key={section.id} onClick={() => goTo(section.id)}>
-									{section.icon}<span>{section.label}</span><ChevronRight className="rtl:rotate-180" />
-								</button>)}
-								{group.sections[0].id === 'transcription' && <button onClick={() => openSubpage('auto-export')}>
-									<ArrowUpRight /><span>{m.autoExport()}</span><ChevronRight className="rtl:rotate-180" />
-								</button>}
-							</section>)}
-						</div>
-					)}
 					<div className="settings-fields" data-models={activeGroup === groups[2] || undefined}>
 						{subpage === 'whisper-options' && <WhisperOptionsSection vm={vm} />}
 						{subpage === 'audio-processing' && <AudioProcessingSection vm={vm} />}

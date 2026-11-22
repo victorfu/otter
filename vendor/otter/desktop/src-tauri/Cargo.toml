@@ -90,7 +90,7 @@ openssl = { version = "0.10.75", features = ["vendored"] }
 winreg = "0.55.0"
 # Used to attach to console
 windows = { version = "0.62.2", features = [
-	"Win32_System_Console",
+	"Win32_System_Console", "Win32_Graphics_Dwm", "Win32_Graphics_Gdi", "Win32_UI_Controls", "Win32_UI_HiDpi", "Win32_UI_Shell", "Win32_UI_WindowsAndMessaging",
 	"Win32_Foundation",
 ] }
 # Used to redirect stdout/stderr from c++ to the attached console
@@ -108,6 +108,8 @@ block2 = "0.6.2"
 # The private TCC framework, for the System Audio Recording permission (system_audio.rs)
 libloading = "0.8"
 objc2-core-foundation = { version = "0.3.2", features = ["CFString"] }
+
+[target.'cfg(any(windows, target_os = "macos"))'.dependencies]
 window-vibrancy = "0.6"
 
 [features]

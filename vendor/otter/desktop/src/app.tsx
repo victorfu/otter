@@ -1,3 +1,7 @@
+import { invoke } from '@tauri-apps/api/core'
+import { platform } from '@tauri-apps/plugin-os'
+import { isNativeDesktop } from '~/lib/desktop-menu'
+import { mountPopoverMaterial } from '~/lib/popover-material'
 import { useEffect } from 'react'
 import { getTextDirection } from '~/paraglide/runtime.js'
 import { useTray } from '~/lib/tray'
@@ -34,6 +38,27 @@ function AppContent() {
 	const { displayLanguage, closeToTray, meetingDetectionEnabled } = usePreferenceProvider()
 	const dir = getTextDirection(displayLanguage)
 	useTray(closeToTray, displayLanguage)
+
+	useEffect(() => {
+		const root = document.documentElement
+		const os = platform()
+		root.dataset.platform = os
+		if (!isNativeDesktop()) return
+		let mounted = true
+		let dispose: (() => void) | undefined
+		void invoke<{ material: boolean; overlay: boolean }>('window_chrome').then(chrome => {
+			if (!mounted) return
+			if (os === 'windows' && chrome.overlay) root.dataset.frame = 'dwm'
+			root.classList.toggle('native-material', chrome.material)
+			if (chrome.material) dispose = mountPopoverMaterial()
+		}).catch(error => console.warn('Window appearance unavailable', error))
+		return () => {
+			mounted = false
+			dispose?.()
+			root.classList.remove('native-material')
+			delete root.dataset.frame
+		}
+	}, [])
 
 	useEffect(() => {
 		document.body.dir = dir

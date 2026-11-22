@@ -105,7 +105,7 @@ function RecordPanel() {
 					<span className="font-mono text-4xl tracking-tight tabular-nums">{formatElapsed(recordElapsed)}</span>
 				</div>
 				<Button onClick={() => recording.stopRecord()} className="h-10 w-full rounded-md bg-destructive text-destructive-foreground hover:bg-destructive/90">
-					<WorkspaceIcon name="stop" className="h-3.5 w-3.5 fill-current" />
+					<WorkspaceIcon name="stop" className="h-3.5 w-3.5" />
 					{m.stopRecording()}
 				</Button>
 			</div>

@@ -1,5 +1,6 @@
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { invoke } from '@tauri-apps/api/core'
+import { isNativeDesktop, popupMenu } from '~/lib/desktop-menu'
 import * as pathApi from '@tauri-apps/api/path'
 import * as dialog from '@tauri-apps/plugin-dialog'
 import * as fs from '@tauri-apps/plugin-fs'
@@ -28,9 +29,9 @@ import RetranscribeDialog from './retranscribe-dialog'
 import type { Job } from '../hooks/use-transcribe-queue'
 
 /** Resize bounds: never narrower than the rows need, never much wider than the default. */
-const DEFAULT_WIDTH = 288
-const MIN_WIDTH = 248
-const MAX_WIDTH = 380
+const DEFAULT_WIDTH = 224
+const MIN_WIDTH = 200
+const MAX_WIDTH = 260
 /**
  * Closing is a separate gesture from resizing: the panel stops following the pointer at MIN_WIDTH,
  * and only collapses once the pointer is dragged this close to the window edge — far enough past
@@ -173,8 +174,7 @@ function RecentRow({
 	const loadSource = useCallback(async () => {
 		const record = await readTranscript(entry.path)
 		if (!record) {
-			setMenu({ sourcePath: null, sourceExists: false })
-			return
+			return { sourcePath: null, sourceExists: false }
 		}
 		let sourceExists = false
 		try {
@@ -183,11 +183,10 @@ function RecentRow({
 			console.warn('failed to check source file:', error)
 		}
 		if (sourceExists) {
-			setMenu({ sourcePath: record.sourcePath, sourceExists: true })
-			return
+			return { sourcePath: record.sourcePath, sourceExists: true }
 		}
 		const copy = await resolveProjectAudio(entry.path, record)
-		setMenu({ sourcePath: copy ?? (record.sourcePath || null), sourceExists: !!copy })
+		return { sourcePath: copy ?? (record.sourcePath || null), sourceExists: !!copy }
 	}, [entry.path])
 
 	async function reveal() {
@@ -211,6 +210,17 @@ function RecentRow({
 	function retranscribe() {
 		if (!menu.sourcePath || !menu.sourceExists) return
 		queue.enqueue([{ name: entry.name, path: menu.sourcePath, projectName: entry.name }])
+	}
+
+	async function showNativeActions(x: number, y: number) {
+		const source = await loadSource()
+		setMenu(source)
+		await popupMenu([
+			{ id: 'retranscribe', text: m.reTranscribe(), enabled: !disabled && source.sourceExists, action: () => setRetranscribing(true) },
+			{ id: 'rename', text: m.rename(), action: () => { setDraftName(entry.name); setRenaming(true) } },
+			{ id: 'reveal', text: m.showInFolder(), action: () => void reveal() },
+			{ id: 'delete', text: m.delete(), action: () => void remove() },
+		], x, y)
 	}
 
 	async function commitRename() {
@@ -240,7 +250,12 @@ function RecentRow({
 	}
 
 	return (
-		<div className={cn('project-row group relative flex items-center rounded-xl transition-colors duration-150', active ? 'bg-muted' : 'hover:bg-muted/60')}>
+		<div onContextMenu={event => {
+			if (isNativeDesktop()) {
+				event.preventDefault()
+				void showNativeActions(event.clientX, event.clientY)
+			}
+		}} className={cn('project-row group relative flex items-center rounded-xl transition-colors duration-150', active ? 'bg-muted' : 'hover:bg-muted/60')}>
 			<RetranscribeDialog open={retranscribing} onOpenChange={setRetranscribing} name={entry.name} onConfirm={retranscribe} />
 			<button
 				type="button"
@@ -252,9 +267,15 @@ function RecentRow({
 				<p className="mt-0.5 truncate text-[11px] text-muted-foreground">{relativeDate(entry.createdAt)}</p>
 			</button>
 
-			<DropdownMenu
+			{isNativeDesktop() ? (
+				<button type="button" className="me-1 rounded-md p-2 opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+					aria-label={m.transcriptActions()} onClick={event => {
+						const rect = event.currentTarget.getBoundingClientRect()
+						void showNativeActions(rect.left, rect.bottom)
+					}}><WorkspaceIcon name="more" className="size-4" /></button>
+			) : <DropdownMenu
 				onOpenChange={(open) => {
-					if (open) void loadSource()
+					if (open) void loadSource().then(setMenu)
 				}}>
 				<DropdownMenuTrigger asChild>
 					<button
@@ -284,7 +305,7 @@ function RecentRow({
 						{m.delete()}
 					</DropdownMenuItem>
 				</DropdownMenuContent>
-			</DropdownMenu>
+			</DropdownMenu>}
 		</div>
 	)
 }

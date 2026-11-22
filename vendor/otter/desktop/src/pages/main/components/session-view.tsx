@@ -36,7 +36,7 @@ export default function SessionView() {
 			transition={{ duration: 0.25, ease: 'easeOut' }}
 			className="flex min-h-0 flex-1">
 			{multiple && (
-				<aside className="hidden w-[264px] shrink-0 border-e border-border md:block">
+				<aside className="hidden bg-card w-[248px] shrink-0 border-e border-border md:block">
 					<FileQueue />
 				</aside>
 			)}
@@ -52,7 +52,7 @@ export default function SessionView() {
 				)}
 				<BatchBanner />
 				<TranscriptToolbar job={selected} query={query} setQuery={setQuery} options={options} tab={tab} setTab={setTab} />
-				<div className="min-h-0 flex-1">{selected && <TranscriptView job={selected} query={query} options={options} tab={tab} />}</div>
+				<div className="min-h-0 flex-1 bg-background">{selected && <TranscriptView job={selected} query={query} options={options} tab={tab} />}</div>
 			</div>
 		</motion.div>
 	)

@@ -131,7 +131,7 @@ All scripts work in PowerShell, cmd, bash and zsh. Any logic lives in `scripts/*
 | `npm run doctor`            | Environment check                                                                                                           |
 | `npm run bindings`          | Regenerate TypeScript types from Rust (ts-rs)                                                                               |
 | `npm run sync`              | Push `app.json` / version into every config file                                                                            |
-| `npm run icons`             | Regenerate all icon sizes from `crates-tauri/app/icons/source/*.png`                                                        |
+| `npm run icons`             | Regenerate all icon sizes from `vendor/otter/design/logo.png`                                                        |
 | `npm run version:set 1.2.3` | Set the version everywhere                                                                                                  |
 | `npm run build`             | Release executable without installers (`target/release/otter`, `.exe` on Windows); `npm run build:dev` for the Dev identity |
 | `npm run bundle`            | Build release installers for this platform (see RELEASING.md)                                                               |
@@ -153,7 +153,7 @@ crates/core/              Pure Rust business logic. No Tauri dependency, tested 
 crates-tauri/app/         Tauri shell: commands, plugins, windows, capabilities
   tauri.conf.json         Dev config (identifier *.dev, "Otter Dev", dev icons)
   tauri.release.conf.json Merged over the dev config for release builds
-  icons/source/           1024×1024 sources (release.png, dev.png)
+  icons/source/           Generated copies of the shared Otter logo
   icons/{release,dev}/    Generated sizes
 scripts/                  Cross-platform Node scripts (doctor, check, bundle, …)
 .github/workflows/        CI + release (inactive until the repo is on GitHub)
@@ -195,6 +195,6 @@ Because the identifiers differ, app data, localStorage, window state and the sin
 1. Edit `app.json` (product name, identifier, publisher, homepage, updater endpoint).
 2. `npm run sync`
 3. Optionally rename the npm/cargo package names (`@otter/client`, `otter-core`, `otter-app`; the executable is the `[[bin]]` name in `crates-tauri/app/Cargo.toml`).
-4. Replace `crates-tauri/app/icons/source/*.png` and run `npm run icons`.
+4. Replace `vendor/otter/design/logo.png` and run `npm run icons`.
 
 > ⚠️ Changing the identifier after users have installed the app moves their data directory. Decide it before your first public release.

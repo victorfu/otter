@@ -16,6 +16,17 @@ use tokio::sync::Mutex;
 
 pub static STATIC_APP: Lazy<std::sync::Mutex<Option<tauri::AppHandle>>> = Lazy::new(|| std::sync::Mutex::new(None));
 
+#[derive(Default, Clone, Copy, serde::Serialize)]
+pub struct WindowChrome {
+    material: bool,
+    overlay: bool,
+}
+
+#[tauri::command]
+pub fn window_chrome(state: tauri::State<'_, std::sync::Mutex<WindowChrome>>) -> WindowChrome {
+    *state.lock().unwrap_or_else(|e| e.into_inner())
+}
+
 pub struct ServerState {
     pub process: Option<ServerProcess>,
 }
@@ -171,7 +182,7 @@ pub fn setup(app: &App) -> Result<(), Box<dyn std::error::Error>> {
         // Create main window
         let builder = tauri::WebviewWindowBuilder::new(app, "main", tauri::WebviewUrl::App("index.html".into()))
             .inner_size(800.0, 700.0)
-            .min_inner_size(800.0, 700.0)
+            .min_inner_size(400.0, 400.0)
             .center()
             .title("Otter")
             .resizable(true)
@@ -185,18 +196,32 @@ pub fn setup(app: &App) -> Result<(), Box<dyn std::error::Error>> {
         let builder = builder
             .title_bar_style(tauri::TitleBarStyle::Overlay)
             .hidden_title(true)
-            // Centered on the 56px titlebar row so the lights align with the sidebar toggle.
-            .traffic_light_position(tauri::LogicalPosition::new(16.0, 28.0))
+            // Centered on the 46px titlebar row so the lights align with the sidebar toggle.
+            .traffic_light_position(tauri::LogicalPosition::new(16.0, 23.0))
             .transparent(true);
+        #[cfg(windows)]
+        let builder = builder.transparent(true);
         match builder.build() {
             Ok(_window) => {
-                // Glass sidebar: the window is transparent on macOS and an NSVisualEffectView
-                // shows the blurred desktop wherever the web content leaves alpha (the sidebar).
-                #[cfg(target_os = "macos")]
+                #[cfg(any(windows, target_os = "macos"))]
                 {
-                    use window_vibrancy::{apply_vibrancy, NSVisualEffectMaterial};
-                    if let Err(error) = apply_vibrancy(&_window, NSVisualEffectMaterial::Sidebar, None, None) {
-                        tracing::warn!("failed to apply vibrancy: {:?}", error);
+                    let state = app.state::<std::sync::Mutex<WindowChrome>>();
+                    let mut chrome = state.lock().unwrap_or_else(|e| e.into_inner());
+                    #[cfg(windows)]
+                    {
+                        chrome.material = window_vibrancy::apply_mica(&_window, None)
+                            .or_else(|_| window_vibrancy::apply_acrylic(&_window, None))
+                            .is_ok();
+                        match crate::window_frame::install(&_window) {
+                            Ok(()) => chrome.overlay = true,
+                            Err(error) => tracing::warn!("native title bar: {error}"),
+                        }
+                    }
+                    #[cfg(target_os = "macos")]
+                    {
+                        use window_vibrancy::{apply_vibrancy, NSVisualEffectMaterial};
+                        chrome.overlay = true;
+                        chrome.material = apply_vibrancy(&_window, NSVisualEffectMaterial::Sidebar, None, None).is_ok();
                     }
                 }
             }

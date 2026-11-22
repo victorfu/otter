@@ -13,6 +13,7 @@ const PopoverContent = React.forwardRef<React.ElementRef<typeof PopoverPrimitive
 	({ className, align = 'center', sideOffset = 4, ...props }, ref) => (
 		<PopoverPrimitive.Portal>
 			<PopoverPrimitive.Content
+				data-native-float=""
 				ref={ref}
 				align={align}
 				sideOffset={sideOffset}

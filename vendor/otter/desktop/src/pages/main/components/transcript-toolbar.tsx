@@ -1,4 +1,5 @@
-import { AnimatePresence, motion } from 'framer-motion'
+import { createPortal } from 'react-dom'
+import { platform } from '@tauri-apps/plugin-os'
 import { ChevronDown, Download, NotebookPen, Pencil, PilcrowLeft, PilcrowRight, Plus, Search, Settings2, Sparkles, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { m } from '~/paraglide/messages.js'
@@ -297,119 +298,91 @@ export default function TranscriptToolbar({
 	const hasText = (job?.segments.length ?? 0) > 0
 	const hasExportContent = hasText || Boolean(job?.summary)
 
+	const titleSlot = document.getElementById('title-search')
+	useEffect(() => {
+		function find() {
+			setSearching(true)
+			searchRef.current?.focus()
+		}
+		window.addEventListener('otter:search-transcript', find)
+		return () => window.removeEventListener('otter:search-transcript', find)
+	}, [])
 	return (
 		<>
-			<div className="studio-toolbar sticky top-0 z-10 flex h-14 shrink-0 items-center gap-1 border-b border-border bg-background/85 px-4 backdrop-blur-md">
-				<AnimatePresence initial={false} mode="wait">
-					{searching ? (
-						<motion.div
-							key="search"
-							initial={{ opacity: 0, y: -4 }}
-							animate={{ opacity: 1, y: 0 }}
-							exit={{ opacity: 0, y: -4 }}
-							transition={{ duration: 0.15, ease: 'easeOut' }}
-							className="flex w-full items-center gap-2">
-							<Search className="h-4 w-4 shrink-0 text-muted-foreground" />
-							<input
-								ref={searchRef}
-								autoFocus
-								autoComplete="off"
-								autoCorrect="off"
-								autoCapitalize="none"
-								spellCheck={false}
-								value={query}
-								onChange={(event) => setQuery(event.target.value)}
-								onKeyDown={(event) => event.key === 'Escape' && closeSearch()}
-								placeholder={m.searchTranscript()}
-								className="h-9 w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
-							/>
-							<Button variant="ghost" size="iconSm" aria-label={m.modalClose()} onClick={closeSearch} className="rounded-full">
-								<X className="h-4 w-4" />
-							</Button>
-						</motion.div>
-					) : (
-						<motion.div
-							key="actions"
-							initial={{ opacity: 0, y: -4 }}
-							animate={{ opacity: 1, y: 0 }}
-							exit={{ opacity: 0, y: -4 }}
-							transition={{ duration: 0.15, ease: 'easeOut' }}
-							className="flex w-full items-center gap-1">
-							{queue.jobs.length > 1 ? (
-								/* A batch: the same word, with everything that writes files behind it. */
-								<DropdownMenu>
-									<DropdownMenuTrigger asChild>
-										<Button variant="ghost" size="sm" className="rounded-full px-3 text-[13px] font-medium">
-											<Download className="h-3.5 w-3.5" />
-											{m.exportDialogTitle()}
-											<ChevronDown className="h-3 w-3 opacity-70" />
-										</Button>
-									</DropdownMenuTrigger>
-									<DropdownMenuContent align="start" className="w-60">
-										<DropdownMenuItem onClick={openExport} disabled={!hasExportContent}>
-											{m.exportThisTranscript()}
-										</DropdownMenuItem>
-										<DropdownMenuItem onClick={() => void queue.exportFinished()} disabled={queue.unexportedCount === 0}>
-											{m.exportAllFinished({ count: String(queue.unexportedCount) })}
-										</DropdownMenuItem>
-										<DropdownMenuSeparator />
-										<DropdownMenuItem
-											onClick={() => window.dispatchEvent(new CustomEvent('otter:open-settings', { detail: { scrollTo: 'auto-export' } }))}
-											className="flex items-center justify-between gap-3">
-											<span className="shrink-0 whitespace-nowrap">{m.autoExport()}</span>
-											<span className="truncate text-[11px] text-muted-foreground">
-												{autoExport.enabled
-													? `${m.autoExportOn()} · ${autoExport.formats.map((format) => (format === 'normal' ? 'TXT' : format.toUpperCase())).join(', ')}`
-													: m.autoExportOff()}
-											</span>
-										</DropdownMenuItem>
-									</DropdownMenuContent>
-								</DropdownMenu>
-							) : (
-								<Button
-									variant="ghost"
-									size="sm"
-									onClick={openExport}
-									disabled={!hasExportContent}
-									className="rounded-full px-3 text-[13px] font-medium">
+			{titleSlot && createPortal(searching ? (
+				<div className="window-search">
+					<input ref={searchRef} autoFocus type="search" value={query} aria-label={m.searchTranscript()} placeholder={m.searchTranscript()}
+						onChange={event => setQuery(event.target.value)} onKeyDown={event => { if (event.key === 'Escape') closeSearch() }} />
+					<Button size="iconSm" variant="ghost" onClick={closeSearch} aria-label={m.modalClose()}><X /></Button>
+				</div>
+			) : <Tooltip><TooltipTrigger asChild>
+				<Button variant="ghost" size="iconSm" disabled={!hasText} onClick={() => setSearching(true)} aria-label={m.searchTranscript()}><Search /></Button>
+			</TooltipTrigger><TooltipContent>{m.searchTranscript()}<kbd className="shortcut-key">{platform() === 'macos' ? '⌘F' : 'Ctrl+F'}</kbd></TooltipContent></Tooltip>, titleSlot)}
+			<div className="studio-toolbar sticky top-0 z-10 flex h-12 shrink-0 items-center gap-1 border-b border-border px-3">
+				<div className="flex w-full items-center gap-1">
+					{queue.jobs.length > 1 ? (
+						/* A batch: the same word, with everything that writes files behind it. */
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button variant="ghost" size="sm" className="rounded-full px-3 text-[13px] font-medium">
 									<Download className="h-3.5 w-3.5" />
 									{m.exportDialogTitle()}
+									<ChevronDown className="h-3 w-3 opacity-70" />
 								</Button>
-							)}
+							</DropdownMenuTrigger>
+							<DropdownMenuContent align="start" className="w-60">
+								<DropdownMenuItem onClick={openExport} disabled={!hasExportContent}>
+									{m.exportThisTranscript()}
+								</DropdownMenuItem>
+								<DropdownMenuItem onClick={() => void queue.exportFinished()} disabled={queue.unexportedCount === 0}>
+									{m.exportAllFinished({ count: String(queue.unexportedCount) })}
+								</DropdownMenuItem>
+								<DropdownMenuSeparator />
+								<DropdownMenuItem
+									onClick={() => window.dispatchEvent(new CustomEvent('otter:open-settings', { detail: { scrollTo: 'auto-export' } }))}
+									className="flex items-center justify-between gap-3">
+									<span className="shrink-0 whitespace-nowrap">{m.autoExport()}</span>
+									<span className="truncate text-[11px] text-muted-foreground">
+										{autoExport.enabled
+											? `${m.autoExportOn()} · ${autoExport.formats.map((format) => (format === 'normal' ? 'TXT' : format.toUpperCase())).join(', ')}`
+											: m.autoExportOff()}
+									</span>
+								</DropdownMenuItem>
+							</DropdownMenuContent>
+						</DropdownMenu>
+					) : (
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={openExport}
+							disabled={!hasExportContent}
+							className="rounded-full px-3 text-[13px] font-medium">
+							<Download className="h-3.5 w-3.5" />
+							{m.exportDialogTitle()}
+						</Button>
+					)}
 
+					<SummaryMenu job={job} tab={tab} setTab={setTab} />
+
+					<ViewOptions options={options} />
+
+					<div className="ms-auto flex items-center gap-1">
+						{queue.running && (
 							<Button
 								variant="ghost"
 								size="sm"
-								aria-label={m.searchTranscript()}
-								onClick={() => setSearching(true)}
-								disabled={!hasText}
-								className="rounded-full px-3 text-[13px] font-medium">
-								<Search className="h-3.5 w-3.5" />
+								onClick={queue.cancelAll}
+								disabled={queue.isAborting}
+								className={cn('rounded-full px-3 text-[13px] font-medium text-muted-foreground hover:text-destructive')}>
+								{queue.isAborting ? m.aborting() : m.cancel()}
 							</Button>
-
-							<SummaryMenu job={job} tab={tab} setTab={setTab} />
-
-							<ViewOptions options={options} />
-
-							<div className="ms-auto flex items-center gap-1">
-								{queue.running && (
-									<Button
-										variant="ghost"
-										size="sm"
-										onClick={queue.cancelAll}
-										disabled={queue.isAborting}
-										className={cn('rounded-full px-3 text-[13px] font-medium text-muted-foreground hover:text-destructive')}>
-										{queue.isAborting ? m.aborting() : m.cancel()}
-									</Button>
-								)}
-								<Button variant="ghost" size="sm" onClick={startNew} className="rounded-full px-3 text-[13px] font-medium">
-									<Plus className="h-3.5 w-3.5" />
-									{m.newSession()}
-								</Button>
-							</div>
-						</motion.div>
-					)}
-				</AnimatePresence>
+						)}
+						<Button variant="ghost" size="sm" onClick={startNew} className="rounded-full px-3 text-[13px] font-medium">
+							<Plus className="h-3.5 w-3.5" />
+							{m.newSession()}
+						</Button>
+					</div>
+				</div>
 			</div>
 			<TranscriptExportDialog
 				open={exportOpen}

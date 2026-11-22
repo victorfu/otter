@@ -59,6 +59,7 @@ const DropdownMenuContent = React.forwardRef<
 >(({ className, sideOffset = 4, ...props }, ref) => (
 	<DropdownMenuPrimitive.Portal>
 		<DropdownMenuPrimitive.Content
+				data-native-float=""
 			ref={ref}
 			sideOffset={sideOffset}
 			className={cn(
