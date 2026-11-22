@@ -8,7 +8,7 @@ release/
 *.tsbuildinfo
 
 # Tauri generated
-crates-tauri/app/gen/
+desktop/src-tauri/gen/
 
 # Secrets — never commit
 .env
@@ -26,3 +26,49 @@ Thumbs.db
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+*.wav
+*.opus
+!src/audio/test_audio.wav
+*.srt
+*.vtt
+*.dll
+*.exe
+*.dylib
+*.old.json
+ffmpeg.framework/
+ffmpeg*-default/
+*.xz
+*.pyc
+ffmpeg/
+openblas/
+*.7z
+!server/fixtures/*
+vulkan_sdk/
+vulkan_runtime/
+schemas/
+venv/
+*.bin
+*.onnx
+*trace*.log
+server/fixtures/**/*.txt
+pnpm-workspace.yaml
+desktop/src-tauri/binaries/otter-server-*
+github-issues/
+dedup_report.json
+ISSUES-REPORT.md
+desktop/src-tauri/binaries/*
+desktop/src-tauri/gstreamer/
+!desktop/src-tauri/binaries/.gitkeep
+*.csv
+# The engine lives in server/ now; an old nested sona checkout may still sit here.
+/sona/
+whisper.cpp/
+aptabase-python/
+tauri-plugin-aptabase/
+**/project.inlang/cache/
+**/project.inlang/project_id
+
+# Scratch artifacts for the engine/whisper output comparison (includes a 47MB binary).
+plans/
+*.parquet

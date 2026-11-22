@@ -1,0 +1,212 @@
+require 1.6.0
+
+# Otter development tasks. Run `chore list` to see them.
+#
+# The desktop loop and the sidecar fetch live here; tasks that belong to one
+# area live with it, as `<area>/<area>.chore`, and are included below. They
+# are deliberately not named `chorefile`: chore resolves a run by walking up
+# for that filename, so included tasks always share the same repository root.
+#
+# The Python scripts under scripts/ are still the programs they always were --
+# these tasks call them, they do not reimplement them. CI calls the same tasks,
+# so a green local run means the same commands ran.
+
+include website/website.chore
+include e2e/e2e.chore
+
+# The server release the app ships, a server-v* tag of this repository.
+server=$(read .server-version)
+bin=desktop/src-tauri/binaries
+# Tauri's GStreamer plugin release, a tag of tauri-apps/tauri-gstreamer-plugin.
+gst_plugin=gst-plugin-tauri-v0.0.1
+
+# Compile the engine from the same checkout as the desktop client.
+task server-build target=$TRIPLE {
+    exe=""
+    if $1 == aarch64-apple-darwin {
+        platform=darwin-arm64
+    } else if $1 == x86_64-apple-darwin {
+        platform=darwin-x86_64
+    } else if $1 == x86_64-pc-windows-msvc {
+        platform=windows-amd64-msvc
+    } else if $1 == x86_64-unknown-linux-gnu {
+        platform=linux-x86_64
+    } else if $1 == aarch64-unknown-linux-gnu {
+        platform=linux-aarch64
+    } else {
+        fail "unsupported target: $1"
+    }
+    if $1 contains windows { exe=.exe }
+    cd server
+    version=$(read libs/ggml-version)
+    revision=$(read libs/revision)
+    tag=libraries-ggml-$version-r$revision
+    if !exists libs/lib/$platform-$tag {
+        chore fetch-libs $platform
+        echo "$tag" > libs/lib/$platform-$tag
+    }
+    if $1 == $TRIPLE {
+        cargo build --locked --release -p otter-server
+        binary=server/target/release/otter-server$exe
+    } else {
+        cargo build --locked --release --target $1 -p otter-server
+        binary=server/target/$1/release/otter-server$exe
+    }
+    cd $ROOT
+    mkdir $bin
+    copy $binary $bin/otter-server-$1$exe
+}
+
+task setup target=$TRIPLE {
+    server-build $1
+    if $1 contains linux {
+        gst-plugin $1
+        return
+    }
+    exe=""
+    if $1 contains windows { exe=.exe }
+    if exists $bin/ffmpeg-$1$exe { return }
+    # Only FFmpeg is extracted from the pinned upstream distribution.
+    if $1 == aarch64-apple-darwin {
+        asset=vibe-server-darwin-arm64-with-ffmpeg.tar.gz
+    } else if $1 == x86_64-apple-darwin {
+        asset=vibe-server-darwin-amd64-with-ffmpeg.tar.gz
+    } else {
+        asset=vibe-server-windows-amd64-with-ffmpeg.zip
+    }
+    mkdir target/sidecars
+    download gh://thewh1teagle/vibe/server-$server/$asset target/sidecars/$asset
+    extract target/sidecars/$asset $bin --member ffmpeg$exe --flatten
+    move $bin/ffmpeg$exe $bin/ffmpeg-$1$exe
+    chmod 755 $bin/ffmpeg-$1$exe
+    remove target/sidecars/$asset
+}
+
+# Fetch Tauri's GStreamer plugin for asset:// playback into the Linux packages: gst-plugin <triple>.
+task gst-plugin target=$TRIPLE {
+    # WebKitGTK plays media through GStreamer, which cannot read the asset:// URLs the
+    # player uses (#1711). tauri.linux.conf.json packages this file and linux_media.rs
+    # points GStreamer at it. Pinned by hash: it is loaded into the app's web process.
+    out=desktop/src-tauri/gstreamer
+    if exists $out/libgsttauriasset.so {
+        echo "the GStreamer plugin is already in place"
+        return
+    }
+    if $1 == x86_64-unknown-linux-gnu {
+        asset=libgsttauriasset-x86_64.so
+        sum=abb55c037ac07545c0e19e8d11fbc6bc642c23a24f35f550b5f830d387db0914
+    } else if $1 == aarch64-unknown-linux-gnu {
+        asset=libgsttauriasset-aarch64.so
+        sum=a50347365b0949a3bd251689b7b5e1cbb01b4ae9a2e3446d6d28a77d55b35f6f
+    } else {
+        fail "the GStreamer plugin has no build for $1"
+    }
+    mkdir $out
+    download gh://tauri-apps/tauri-gstreamer-plugin/$gst_plugin/$asset $out/libgsttauriasset.so --sha256 $sum
+    echo "installed the GStreamer plugin for $1"
+}
+
+# Install the Linux build dependencies with apt.
+task linux-deps {
+    # The Tauri prerequisites plus what Otter adds on top: alsa for audio, xdo
+    # for the global shortcut, and the appindicator bindings for the tray icon.
+    # `setup` deliberately does not call this -- it needs sudo, and every
+    # `chore dev` should not ask for a password.
+    if $OS != linux {
+        fail "linux-deps is for Linux; there is nothing to install on $OS"
+    }
+    sudo apt-get update
+    sudo apt-get install -y pkg-config build-essential libglib2.0-dev libgtk-3-dev libwebkit2gtk-4.1-dev clang cmake libssl-dev libasound2-dev libxdo-dev libayatana-appindicator3-dev
+}
+
+# Install the frontend dependencies.
+task install {
+    cd desktop
+    pnpm install
+}
+
+# Run the app in dev mode.
+task dev {
+    setup
+    cd desktop
+    pnpm exec tauri dev
+}
+
+# Run only the desktop frontend in a browser, with Tauri mocked.
+task dev-web {
+    cd desktop
+    pnpm dev
+}
+
+# Build the app for production.
+task build {
+    setup
+    cd desktop
+    pnpm exec tauri build
+}
+
+# Rebuild otter.app, replace the installed one and relaunch it (macOS).
+task upgrade {
+    # The updater artifacts are skipped: signing them needs the CI private key.
+    setup
+    cd desktop
+    pnpm exec tauri build --bundles app --config '{"bundle":{"createUpdaterArtifacts":false}}'
+    cd $ROOT
+    try osascript -e 'quit app "otter"'
+    remove /Applications/Otter.app
+    copy target/release/bundle/macos/Otter.app /Applications/Otter.app
+    open /Applications/Otter.app
+    echo "otter upgraded and relaunched"
+}
+
+# Run the frontend tests.
+task test {
+    cd desktop
+    pnpm test
+}
+
+# Lint the frontend and Rust, with the flags CI uses.
+task lint {
+    cd desktop
+    pnpm lint
+    cd $ROOT
+    # These match .github/workflows/lint_rust.yml exactly. The justfile's
+    # versions had drifted -- no --all, no --all-targets, no -D warnings --
+    # so a clean `just lint` said nothing about whether CI would pass.
+    cargo fmt --manifest-path Cargo.toml --all -- --check
+    cargo clippy --manifest-path Cargo.toml --all-targets -- -D warnings
+}
+
+# Format everything in place.
+task format {
+    npm run format
+}
+
+# Regenerate the i18n files.
+task i18n {
+    cd desktop
+    pnpm i18n:generate
+}
+
+# Check translation coverage against en-US.
+task check-i18n {
+    uv run scripts/check_i18n.py
+}
+
+# Refresh the source hash on every translated changelog entry and docs page.
+task stamp-translations {
+    uv run scripts/content_i18n.py stamp
+}
+
+# Type-check the desktop app and the website.
+task check-types {
+    npm run check-types
+}
+
+# Run every check CI runs, in one go.
+task ci {
+    lint
+    check-types
+    check-i18n
+    test
+}

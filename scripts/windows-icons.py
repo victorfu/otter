@@ -8,7 +8,7 @@ from PIL import Image
 
 
 root = Path(__file__).resolve().parents[1]
-app = root / "vendor/otter"
+app = root
 # tauri-codegen 2.5 reads only entry zero for the running window and tray.
 # Explorer also reads this file and chooses an entry for the requested DPI.
 sizes = (64, 16, 20, 24, 28, 30, 32, 36, 40, 48, 60, 72, 80, 96, 128, 256)
@@ -30,7 +30,5 @@ with Image.open(app / "design/logo.png") as art:
 for output in (
     app / "desktop/src-tauri/icons/icon.ico",
     app / "website/public/favicon.ico",
-    root / "crates-tauri/app/icons/dev/icon.ico",
-    root / "crates-tauri/app/icons/release/icon.ico",
 ):
     output.write_bytes(directory + pixels)

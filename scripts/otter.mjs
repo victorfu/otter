@@ -4,8 +4,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const root = fileURLToPath(new URL('../', import.meta.url))
-const upstream = path.join(root, 'vendor', 'otter')
-const desktop = path.join(upstream, 'desktop')
+const desktop = path.join(root, 'desktop')
 const pnpm = path.join(root, 'node_modules', 'pnpm', 'bin', 'pnpm.cjs')
 const localChore = path.join(root, 'target', 'otter-tools', process.platform === 'win32' ? 'chore.exe' : 'chore')
 // Nested pnpm scripts add more paths. Remove duplicates to keep cmd.exe
@@ -27,7 +26,7 @@ function frontend(...args) {
 }
 
 function setup() {
-  run(existsSync(localChore) ? localChore : 'chore', ['setup'], upstream)
+  run(existsSync(localChore) ? localChore : 'chore', ['setup'], root)
 }
 
 switch (process.argv[2]) {
@@ -57,7 +56,7 @@ switch (process.argv[2]) {
     break
   case 'check':
     frontend('build')
-    run('cargo', ['check', '--locked', '--workspace'], upstream)
+    run('cargo', ['check', '--locked', '--workspace'], root)
     break
   default:
     throw new Error('Expected init, dev, build, build:dev, bundle, check, tauri, or test')

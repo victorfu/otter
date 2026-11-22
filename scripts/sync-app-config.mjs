@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Propagate app.json (identity) and package.json (version) to every file that
 // needs them. Single sources of truth:
-//   - app.json      → product name, identifier, publisher, updater endpoint …
+//   - app.json      → product name, identifier, updater endpoint
 //   - package.json  → version
 //
 //   npm run sync              # write changes
@@ -10,9 +10,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { isDeepStrictEqual } from "node:util";
 import {
-  CLIENT_DIR,
   ROOT,
-  TAURI_DIR,
   appConfig,
   c,
   readJson,
@@ -54,58 +52,21 @@ function syncText(rel, replacer) {
   }
 }
 
-const rel = (p) => path.relative(ROOT, p).replaceAll("\\", "/");
-
 // --- Tauri configs ------------------------------------------------------------
-syncJson("vendor/otter/desktop/src-tauri/tauri.conf.json", (conf) => {
+syncJson("desktop/src-tauri/tauri.conf.json", (conf) => {
   conf.productName = app.productName;
   conf.identifier = app.identifier;
   conf.version = version;
-});
-
-syncJson(rel(path.join(TAURI_DIR, "tauri.conf.json")), (conf) => {
-  conf.productName = `${app.productName} Dev`;
-  conf.identifier = `${app.identifier}.dev`;
-  conf.version = version;
-  conf.app.windows[0].title = `${app.productName} Dev`;
-  Object.assign(conf.bundle, {
-    publisher: app.publisher,
-    homepage: app.homepage,
-    copyright: `© ${app.publisher}`,
-    shortDescription: app.description,
-    longDescription: app.description,
-  });
-});
-
-syncJson(rel(path.join(TAURI_DIR, "tauri.release.conf.json")), (conf) => {
-  conf.productName = app.productName;
-  conf.identifier = app.identifier;
   conf.plugins.updater.endpoints = [app.updaterEndpoint];
 });
-
-// --- Versions -----------------------------------------------------------------
-syncJson(rel(path.join(CLIENT_DIR, "package.json")), (pkg) => {
-  pkg.version = version;
-});
-
+syncJson("desktop/package.json", (pkg) => { pkg.version = version; });
 syncJson("package-lock.json", (lock) => {
   lock.version = version;
-  if (lock.packages?.[""]) lock.packages[""].version = version;
-  if (lock.packages?.["apps/client"]) lock.packages["apps/client"].version = version;
+  lock.packages[""].version = version;
 });
-
-syncText("Cargo.toml", (s) =>
-  s.replace(/(\[workspace\.package\][^[]*?\nversion\s*=\s*")[^"]*(")/, `$1${version}$2`),
-);
-
-syncText("Cargo.lock", (s) =>
-  s.replace(/(name = "otter-(?:core|app)"\r?\nversion = ")[^"]*(")/g, `$1${version}$2`),
-);
-
-// --- Frontend -----------------------------------------------------------------
-syncText(rel(path.join(CLIENT_DIR, "index.html")), (s) =>
-  s.replace(/<title>[^<]*<\/title>/, `<title>${app.productName}</title>`),
-);
+syncText("desktop/src-tauri/Cargo.toml", (s) => s.replace(/^(version = ")[^"]+"/m, `$1${version}"`));
+syncText("Cargo.lock", (s) => s.replace(/(name = "otter"\r?\nversion = ")[^"]+"/, `$1${version}"`));
+syncText("desktop/index.html", (s) => s.replace(/<title>[^<]*<\/title>/, `<title>${app.productName}</title>`));
 
 // --- Report -------------------------------------------------------------------
 if (check) {

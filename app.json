@@ -2,8 +2,7 @@
   "$comment": "Single source of truth for app identity. Edit here, then run `npm run sync`.",
   "productName": "Otter",
   "identifier": "cc.otter",
-  "description": "A cross-platform desktop app built with Tauri.",
-  "publisher": "Example Inc.",
-  "homepage": "https://example.com",
-  "updaterEndpoint": "https://example.com/otter/updates/latest.json"
+  "description": "Local audio and video transcription for Windows, macOS and Linux.",
+  "homepage": "https://github.com/victorfu/otter",
+  "updaterEndpoint": "https://victorfu.github.io/otter/updater/stable.json"
 }

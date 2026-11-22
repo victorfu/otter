@@ -1,8 +1,8 @@
 {
   "printWidth": 100,
   "ignorePatterns": [
-    "apps/client/src/bindings/**",
-    "crates-tauri/app/gen/**",
+    "desktop/src/paraglide/**",
+    "desktop/src-tauri/gen/**",
     "package-lock.json",
     "release/**",
     "target/**"

@@ -5,8 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-export const TAURI_DIR = path.join(ROOT, "crates-tauri", "app");
-export const CLIENT_DIR = path.join(ROOT, "apps", "client");
+export const TAURI_DIR = path.join(ROOT, "desktop", "src-tauri");
 export const isWindows = process.platform === "win32";
 
 /** Human-readable platform folder name used under release/<version>/. */

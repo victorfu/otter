@@ -4,7 +4,7 @@
 //   npm run updater:keygen -- --force   # overwrite an existing key (old builds can no longer update!)
 //
 // - The private key is written OUTSIDE the repo; its path and password go to .env.
-// - The public key is written to tauri.release.conf.json.
+// - The public key is written to tauri.conf.json.
 import { randomBytes } from "node:crypto";
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
@@ -46,7 +46,7 @@ run(
 const pubkey = readFileSync(`${keyPath}.pub`, "utf8").trim();
 
 // Public key → release config.
-const confPath = path.join(TAURI_DIR, "tauri.release.conf.json");
+const confPath = path.join(TAURI_DIR, "tauri.conf.json");
 const conf = readJson(confPath);
 conf.plugins.updater.pubkey = pubkey;
 writeJson(confPath, conf);
@@ -66,7 +66,7 @@ setVar("TAURI_SIGNING_PRIVATE_KEY_PASSWORD", password);
 writeFileSync(envPath, env);
 
 console.log(c.green(`✔ Private key: ${keyPath}`));
-console.log(c.green("✔ Public key written to crates-tauri/app/tauri.release.conf.json"));
+console.log(c.green("✔ Public key written to desktop/src-tauri/tauri.conf.json"));
 console.log(c.green("✔ Key path and password written to .env"));
 console.log(
   c.yellow(

@@ -1,10 +1,7 @@
 {
-  "name": "otter-workspace",
+  "name": "otter",
   "version": "0.1.0",
   "private": true,
-  "workspaces": [
-    "apps/*"
-  ],
   "type": "module",
   "scripts": {
     "init": "npm install && node scripts/otter.mjs init",
@@ -19,13 +16,13 @@
     "test": "node scripts/otter.mjs test",
     "doctor": "node scripts/doctor.mjs",
     "sync": "node scripts/sync-app-config.mjs",
-    "bindings": "node scripts/bindings.mjs",
     "icons": "node scripts/icons.mjs",
     "version:set": "node scripts/set-version.mjs",
     "bundle": "node scripts/otter.mjs bundle",
     "release:collect": "node scripts/collect-release.mjs",
     "release:latest-json": "node scripts/make-latest-json.mjs",
-    "updater:keygen": "node scripts/updater-keygen.mjs"
+    "updater:keygen": "node scripts/updater-keygen.mjs",
+    "check-types": "pnpm --dir desktop exec tsc --noEmit && pnpm --dir website exec tsc --noEmit"
   },
   "devDependencies": {
     "@tauri-apps/cli": "2.12.3",

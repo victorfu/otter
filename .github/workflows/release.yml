@@ -77,7 +77,6 @@ jobs:
       - run: echo "$GITHUB_WORKSPACE/node_modules/.bin" >> "$GITHUB_PATH"
       - name: Stage cross-compiled engine on macOS
         if: matrix.name == 'macos-x86_64'
-        working-directory: vendor/otter
         run: chore setup x86_64-apple-darwin
 
       # Export only secrets that are set: empty values would make the Tauri CLI
@@ -135,10 +134,10 @@ jobs:
           releaseBody: "See the assets below to download and install this version."
           releaseDraft: true
           prerelease: false
-          projectPath: vendor/otter/desktop
+          projectPath: desktop
           tauriScript: pnpm exec tauri
           args: >-
-            --config ../../../ci-overrides.json
+            --config ../ci-overrides.json
             ${{ matrix.args }}
           uploadUpdaterJson: true
           updaterJsonPreferNsis: true
