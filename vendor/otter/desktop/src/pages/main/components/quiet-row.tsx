@@ -1,4 +1,4 @@
-import { Bot, ChevronRight, SlidersHorizontal, Sparkles } from 'lucide-react'
+import WorkspaceIcon from '~/components/workspace-icon'
 import { useState } from 'react'
 import { m } from '~/paraglide/messages.js'
 import LanguageInput from '~/components/language-input'
@@ -35,7 +35,7 @@ export default function QuietRow() {
 	}
 
 	return (
-		<div className="flex flex-wrap items-center gap-2">
+		<div className="flex flex-wrap items-center justify-center gap-2">
 			{/* Language leads the row: it changes the output, so it gets the only bordered control here. */}
 			<div className="w-auto max-w-[220px]">
 				<LanguageInput variant="prominent" />
@@ -43,9 +43,8 @@ export default function QuietRow() {
 
 			<Popover open={open} onOpenChange={setOpen}>
 				<PopoverTrigger asChild>
-					<Button variant="ghost" size="sm" className="h-9 rounded-full px-3 text-[13px] font-medium text-muted-foreground hover:text-foreground">
-						<SlidersHorizontal className="h-3.5 w-3.5" />
-						{m.moreOptions()}
+					<Button aria-label={m.moreOptions()} title={m.moreOptions()} variant="outline" size="icon" className="size-9 rounded-md text-[13px] font-medium text-muted-foreground hover:text-foreground">
+						<WorkspaceIcon name="options" className="h-3.5 w-3.5" />
 					</Button>
 				</PopoverTrigger>
 				<PopoverContent align="start" className="w-72 rounded-2xl p-4">
@@ -66,17 +65,17 @@ export default function QuietRow() {
 					</div>
 					<Button variant="ghost" size="sm" className="mt-3 w-full justify-between rounded-xl px-3" onClick={() => openSection('tuning')}>
 						<span className="flex items-center gap-2">
-							<Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
+							<WorkspaceIcon name="options" className="h-3.5 w-3.5 text-muted-foreground" />
 							{m.fineTuning()}
 						</span>
-						<ChevronRight className="h-3.5 w-3.5" />
+						<WorkspaceIcon name="next" className="h-3.5 w-3.5" />
 					</Button>
 					<Button variant="ghost" size="sm" className="mt-1 w-full justify-between rounded-xl px-3" onClick={() => openSection('models')}>
 						<span className="flex items-center gap-2">
-							<Bot className="h-3.5 w-3.5 text-muted-foreground" />
-							{m.selectModel()}
+							<WorkspaceIcon name="model" className="h-3.5 w-3.5 text-muted-foreground" />
+							<span className="min-w-0 truncate">{m.selectModel()}{preference.modelPath && <small className="block truncate font-normal text-muted-foreground">{preference.modelPath.split(/[\\/]/).pop()}</small>}</span>
 						</span>
-						<ChevronRight className="h-3.5 w-3.5" />
+						<WorkspaceIcon name="next" className="h-3.5 w-3.5" />
 					</Button>
 				</PopoverContent>
 			</Popover>

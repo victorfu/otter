@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Check, Globe } from 'lucide-react'
+import WorkspaceIcon from '~/components/workspace-icon'
+import { Check } from 'lucide-react'
 import { m } from '~/paraglide/messages.js'
 import { cn } from '~/lib/style'
 import { Popover, PopoverAnchor, PopoverContent } from '~/components/ui/popover'
@@ -216,7 +217,7 @@ export function FlagSlot({ code, name }: { code: string; name?: string }) {
 	const flag = flagFor(code, name)
 	return (
 		<span aria-hidden className="inline-flex w-6 shrink-0 justify-center text-[15px] leading-none">
-			{flag ?? <Globe className="h-3.5 w-3.5 text-muted-foreground" />}
+			{flag ?? <WorkspaceIcon name="language" className="h-3.5 w-3.5 text-muted-foreground" />}
 		</span>
 	)
 }
@@ -295,7 +296,7 @@ export function LanguageCombobox({
 						open ? 'border-ring/60' : 'cursor-pointer border-border hover:bg-muted/60',
 						className,
 					)}>
-					<Globe className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+					<WorkspaceIcon name="language" className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
 					{open ? (
 						<input
 							ref={inputRef}
@@ -354,7 +355,7 @@ export function LanguageCombobox({
 										)}>
 										{entry.globe ? (
 											<span aria-hidden className="inline-flex w-6 shrink-0 justify-center">
-												<Globe className="h-3.5 w-3.5 text-muted-foreground" />
+												<WorkspaceIcon name="language" className="h-3.5 w-3.5 text-muted-foreground" />
 											</span>
 										) : (
 											<FlagSlot code={entry.flagCode ?? entry.code} name={entry.flagName} />

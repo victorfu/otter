@@ -8,33 +8,72 @@ import RecentsSidebar from './components/recents-sidebar'
 import SessionView from './components/session-view'
 import { SessionProvider, useSession } from './session'
 
-/** Collapsed = hidden entirely; the state lives in localStorage so it survives a reload. */
-function useSidebarVisible() {
-	const [visible, setVisible] = useState(() => {
-		try {
-			// Give the document the full window until a reader chooses to pin the library.
-			return window.localStorage.getItem(SIDEBAR_STORAGE_KEY) === 'expanded'
-		} catch {
-			return false
+function readSidebar(key: string, fallback: boolean) {
+	try {
+		const value = window.localStorage.getItem(key)
+		return value ? value === 'expanded' : fallback
+	} catch {
+		return fallback
+	}
+}
+
+function useSidebarVisible(idle: boolean) {
+	const homeKey = 'otter_home_recents'
+	const [home, setHome] = useState(() => readSidebar(homeKey, true))
+	const [session, setSession] = useState(() => readSidebar(SIDEBAR_STORAGE_KEY, false))
+	const [narrow, setNarrow] = useState(() => window.matchMedia('(max-width: 720px)').matches)
+	const [drawer, setDrawer] = useState(false)
+	const visible = narrow ? drawer : idle ? home : session
+
+	useEffect(() => {
+		const media = window.matchMedia('(max-width: 720px)')
+		function resize() {
+			setNarrow(media.matches)
+			setDrawer(false)
 		}
-	})
+		media.addEventListener('change', resize)
+		return () => media.removeEventListener('change', resize)
+	}, [])
+
+	useEffect(() => {
+		if (!drawer || !narrow) return
+		function dismiss(event: KeyboardEvent) {
+			if (event.key === 'Escape' && !event.defaultPrevented && !document.querySelector('[role="dialog"], [role="menu"]')) {
+				setDrawer(false)
+				document.querySelector<HTMLButtonElement>('.studio-header button[aria-expanded]')?.focus()
+			}
+		}
+		function dismissOutside(event: PointerEvent) {
+			const target = event.target
+			if (target instanceof Element && !target.closest('.studio-session-sidebar, .studio-header, [data-radix-popper-content-wrapper], [role="dialog"]')) setDrawer(false)
+		}
+		window.addEventListener('keydown', dismiss)
+		document.addEventListener('pointerdown', dismissOutside)
+		return () => {
+			window.removeEventListener('keydown', dismiss)
+			document.removeEventListener('pointerdown', dismissOutside)
+		}
+	}, [drawer, narrow])
+
+	useEffect(() => setDrawer(false), [idle])
 
 	useEffect(() => {
 		function toggle() {
-			setVisible((previous) => {
-				const next = !previous
-				try {
-					window.localStorage.setItem(SIDEBAR_STORAGE_KEY, next ? 'expanded' : 'collapsed')
-				} catch {
-					/* private mode — the toggle still works for this session */
-				}
-				return next
-			})
+			if (narrow) {
+				setDrawer(value => !value)
+				return
+			}
+			if (idle) setHome(!visible)
+			else setSession(!visible)
+			try {
+				window.localStorage.setItem(idle ? homeKey : SIDEBAR_STORAGE_KEY, visible ? 'collapsed' : 'expanded')
+			} catch {
+				/* The preference still applies to this window. */
+			}
 		}
 		window.addEventListener(TOGGLE_SIDEBAR_EVENT, toggle)
 		return () => window.removeEventListener(TOGGLE_SIDEBAR_EVENT, toggle)
-	}, [])
-
+	}, [idle, narrow, visible])
 	return visible
 }
 
@@ -50,7 +89,7 @@ function MainContent() {
 						exit={{ opacity: 0, y: -8 }}
 						transition={{ duration: 0.15, ease: 'easeOut' }}
 						className="flex min-h-0 flex-1 flex-col">
-						<div className="studio-home"><RecentsSidebar directory /><IdleHero /></div>
+						<div className="studio-home"><IdleHero /></div>
 					</motion.div>
 				) : (
 					<motion.div
@@ -87,8 +126,8 @@ function MainContent() {
  * closes it ONCE (its own file rail takes the space) but the toggle still reopens it.
  */
 function useShowSidebar() {
-	const sidebarVisible = useSidebarVisible()
-	const { queue } = useSession()
+	const { mode, queue } = useSession()
+	const sidebarVisible = useSidebarVisible(mode === 'idle')
 	const batch = queue.jobs.length > 1
 	const wasBatch = useRef(batch)
 	const visibleRef = useRef(sidebarVisible)
@@ -119,11 +158,11 @@ function Shell() {
 
 	return (
 		<Layout
-			showRecentsToggle={mode !== 'idle'} sidebarExpanded={showSidebar}
+			sidebarExpanded={showSidebar}
 			bottomBar={<PlayerSlot />}
 			sidebar={
 				<AnimatePresence initial={false}>
-					{mode !== 'idle' && showSidebar && (
+					{showSidebar && (
 						<motion.div
 							key="recents"
 							initial={{ opacity: 0, width: 0 }}
@@ -131,7 +170,7 @@ function Shell() {
 							exit={{ opacity: 0, width: 0 }}
 							transition={{ duration: 0.2, ease: 'easeOut' }}
 							className="studio-session-sidebar flex min-h-0 overflow-hidden bg-card">
-							<RecentsSidebar />
+							<RecentsSidebar directory={mode === 'idle'} />
 						</motion.div>
 					)}
 				</AnimatePresence>

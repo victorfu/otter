@@ -1,7 +1,6 @@
 import { listen } from '@tauri-apps/api/event'
 import { AnimatePresence, motion } from 'framer-motion'
-import { FolderOpen, Link2, Mic, Plus, Square, Upload, X } from 'lucide-react'
-import { siFacebook, siInstagram, siTiktok, siX, siYoutube } from 'simple-icons'
+import WorkspaceIcon from '~/components/workspace-icon'
 import { useEffect, useRef, useState } from 'react'
 import { m } from '~/paraglide/messages.js'
 import AudioDeviceInput from '~/components/audio-device-input'
@@ -85,7 +84,7 @@ function LevelMeter() {
 function Segment({ active, disabled, label, onClick, children }: { active?: boolean; disabled?: boolean; label: string; onClick: () => void; children: React.ReactNode }) {
 	return (
 		<button type="button" aria-pressed={active} disabled={disabled} onClick={onClick} className="studio-source">
-			{children}<span>{label}</span><span aria-hidden className="source-indicator" />
+			{children}<span>{label}</span>
 		</button>
 	)
 }
@@ -106,7 +105,7 @@ function RecordPanel() {
 					<span className="font-mono text-4xl tracking-tight tabular-nums">{formatElapsed(recordElapsed)}</span>
 				</div>
 				<Button onClick={() => recording.stopRecord()} className="h-10 w-full rounded-md bg-destructive text-destructive-foreground hover:bg-destructive/90">
-					<Square className="h-3.5 w-3.5 fill-current" />
+					<WorkspaceIcon name="stop" className="h-3.5 w-3.5 fill-current" />
 					{m.stopRecording()}
 				</Button>
 			</div>
@@ -121,7 +120,7 @@ function RecordPanel() {
 				'flex w-full flex-col gap-5 py-2.5',
 				'[&_label]:text-[11px] [&_label]:font-medium [&_label]:tracking-[0.08em] [&_label]:text-muted-foreground [&_label]:uppercase',
 			)}>
-			<div className="grid grid-cols-1 gap-3 [&>div]:space-y-1.5 [&_button]:h-10 [&_button]:rounded-xl">
+			<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 [&>div]:space-y-1.5 [&_button]:h-10 [&_button]:rounded-xl">
 				<AudioDeviceInput type="input" devices={recording.devices} device={recording.inputDevice} setDevice={recording.setInputDevice} />
 				<AudioDeviceInput type="output" devices={recording.devices} device={recording.outputDevice} setDevice={recording.setOutputDevice} />
 			</div>
@@ -129,22 +128,12 @@ function RecordPanel() {
 				onClick={() => recording.startRecord()}
 				disabled={!preference.modelPath || (!recording.inputDevice && !recording.outputDevice)}
 				className="h-10 w-full rounded-xl disabled:opacity-40">
-				<Mic className="h-4 w-4" />
+				<WorkspaceIcon name="microphone" className="h-4 w-4" />
 				{m.startRecord()}
 			</Button>
 		</div>
 	)
 }
-
-// Bundled monochrome brand marks of the most-used yt-dlp sources — fills the panel with a
-// "works with" row instead of dead space. Rendered tiny and muted so it stays quiet.
-const linkSources: { title: string; path: string }[] = [
-	{ title: siYoutube.title, path: siYoutube.path },
-	{ title: siTiktok.title, path: siTiktok.path },
-	{ title: siInstagram.title, path: siInstagram.path },
-	{ title: siX.title, path: siX.path },
-	{ title: siFacebook.title, path: siFacebook.path },
-]
 
 function LinkPanel() {
 	const { link, preference } = useSession()
@@ -155,9 +144,9 @@ function LinkPanel() {
 		const started = percent > 0
 		return (
 			<div className="flex w-full flex-col items-center gap-4 py-2.5">
-				<span className="relative flex h-12 w-12 items-center justify-center rounded-full bg-background/70 text-foreground shadow-sm">
+				<span className="relative capture-symbol">
 					<span aria-hidden className="absolute inset-0 animate-ping rounded-full bg-foreground/5" />
-					<Link2 className="h-5 w-5" />
+					<WorkspaceIcon name="link" className="h-5 w-5" />
 				</span>
 
 				<div className="w-full max-w-sm space-y-2">
@@ -227,7 +216,7 @@ function LinkPanel() {
 									aria-label={m.addLink()}
 									onClick={() => link.queueLinks()}
 									className="absolute end-1.5 top-1/2 flex h-7 w-7 -translate-y-1/2 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/80">
-									<Plus className="h-4 w-4" />
+									<WorkspaceIcon name="add" className="h-4 w-4" />
 								</button>
 							</TooltipTrigger>
 							<TooltipContent>{m.addLink()}</TooltipContent>
@@ -263,7 +252,7 @@ function LinkPanel() {
 									transition={{ duration: 0.18, ease: 'easeOut' }}
 									className="group shrink-0 overflow-hidden rounded-lg text-[13px] text-muted-foreground transition-colors duration-150 hover:bg-muted/60">
 									<div className="flex items-center gap-2.5 px-2 py-1">
-										<Link2 className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
+										<WorkspaceIcon name="link" className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
 										<span dir="ltr" className="min-w-0 flex-1 truncate text-start text-foreground/90">
 											{url}
 										</span>
@@ -272,7 +261,7 @@ function LinkPanel() {
 											aria-label={m.removeLink()}
 											onClick={() => link.removeQueuedLink(url)}
 											className="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-md opacity-0 transition-opacity duration-150 group-hover:opacity-100 hover:bg-muted hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/80">
-											<X className="h-3.5 w-3.5" />
+											<WorkspaceIcon name="close" className="h-3.5 w-3.5" />
 										</button>
 									</div>
 								</motion.li>
@@ -284,21 +273,8 @@ function LinkPanel() {
 
 			<motion.div layout="position" className="flex flex-col items-center gap-3">
 				<p className="text-[11px] font-medium tracking-[0.08em] text-muted-foreground/80 uppercase">{m.worksWith()}</p>
-				<div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-3 text-muted-foreground/70">
-					{linkSources.map((source) => (
-						<Tooltip key={source.title}>
-							<TooltipTrigger asChild>
-								<svg
-									viewBox="0 0 24 24"
-									aria-label={source.title}
-									role="img"
-									className="h-[18px] w-[18px] transition-colors duration-150 hover:text-foreground">
-									<path d={source.path} fill="currentColor" />
-								</svg>
-							</TooltipTrigger>
-							<TooltipContent side="bottom">{source.title}</TooltipContent>
-						</Tooltip>
-					))}
+				<div className="flex flex-wrap items-center justify-center gap-x-3 text-xs text-muted-foreground">
+					<span>YouTube · TikTok · Instagram · X · Facebook</span>
 					<span className="text-[12px] text-muted-foreground/70">{m.moreSources()}</span>
 				</div>
 			</motion.div>
@@ -317,16 +293,16 @@ export default function IdleHero() {
 
 	return (
 		<section className="studio-console">
-			<h2>{m.newTranscription()}</h2>
+			<h1>{m.newTranscription()}</h1>
 			<div className="studio-sources">
 				<Segment disabled={recording.isRecording || link.downloadingAudio} active={panel === 'none'} label={m.fromFile()} onClick={() => selectPanel('none')}>
-					<FolderOpen className="h-[18px] w-[18px]" />
+					<WorkspaceIcon name="file" className="h-[18px] w-[18px]" />
 				</Segment>
 				<Segment disabled={recording.isRecording || link.downloadingAudio} active={panel === 'record'} label={m.record()} onClick={() => selectPanel('record')}>
-					<Mic className="h-[18px] w-[18px]" />
+					<WorkspaceIcon name="microphone" className="h-[18px] w-[18px]" />
 				</Segment>
 				<Segment disabled={recording.isRecording || link.downloadingAudio} active={panel === 'link'} label={m.fromLink()} onClick={() => selectPanel('link')}>
-					<Link2 className="h-[18px] w-[18px]" />
+					<WorkspaceIcon name="link" className="h-[18px] w-[18px]" />
 				</Segment>
 			</div>
 
@@ -336,6 +312,7 @@ export default function IdleHero() {
 					{panel === 'none' ? (
 						<motion.button
 							key="drop"
+							data-dragging={dragging}
 							type="button"
 							onClick={() => void browse()}
 							initial={{ opacity: 0, y: 6 }}
@@ -355,8 +332,8 @@ export default function IdleHero() {
 							/>
 
 							<div className="relative flex flex-col items-center gap-3.5 px-4 py-6 text-center">
-								<span className="flex h-12 w-12 items-center justify-center rounded-full bg-background/70 text-foreground shadow-sm">
-									{collectingFolder ? <Spinner className="h-5 w-5" /> : <Upload className="h-5 w-5" />}
+								<span className="capture-symbol">
+									{collectingFolder ? <Spinner className="h-5 w-5" /> : <WorkspaceIcon name="upload" className="size-8" />}
 								</span>
 								<div className="space-y-1">
 									<h3 className="text-xl font-semibold tracking-[-0.02em] text-foreground">{m.dropFilesHere()}</h3>
@@ -372,7 +349,7 @@ export default function IdleHero() {
 							exit={{ opacity: 0, y: -6 }}
 							transition={{ duration: 0.18, ease: 'easeOut' }}
 							// Same footprint as the drop zone so the composition stays anchored.
-							className="flex w-full flex-col justify-center border border-border bg-muted/30 px-3">
+							className="capture-surface flex w-full flex-col justify-center px-5">
 							{panel === 'record' ? <RecordPanel /> : <LinkPanel />}
 						</motion.div>
 					)}
@@ -380,9 +357,9 @@ export default function IdleHero() {
 			</div>
 
 			<QuietRow />
-			<button type="button" className="studio-model" onClick={() => openSettingsSection('models')}>
-				<span>{m.llmModel()}</span><strong>{preference.modelPath?.split(/[\\/]/).pop() || m.selectModel()}</strong>
-			</button>
+			{!preference.modelPath && <Button variant="outline" className="justify-self-center" onClick={() => openSettingsSection('models')}>
+				<WorkspaceIcon name="model" className="size-4" />{m.selectModel()}
+			</Button>}
 		</section>
 	)
 }

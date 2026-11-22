@@ -1,4 +1,4 @@
-import { PanelLeft, Settings } from 'lucide-react'
+import WorkspaceIcon from '~/components/workspace-icon'
 import { platform } from '@tauri-apps/plugin-os'
 import { ReactNode, useContext, useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
@@ -49,7 +49,7 @@ function SidebarToggleButton({ expanded }: { expanded: boolean }) {
 					aria-label={hint ? m.updateAvailableOpenRecents() : m.toggleRecents()}
 					className="relative h-9 gap-2 rounded-md text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground [&_svg]:size-[18px]"
 					onClick={() => window.dispatchEvent(new CustomEvent(TOGGLE_SIDEBAR_EVENT))}>
-					<PanelLeft strokeWidth={1.75} /><span>{m.recents()}</span>
+					<WorkspaceIcon name="sidebar" className="size-4" /><span>{m.recents()}</span>
 					{hint && (
 						<span aria-hidden className="absolute end-1 top-1 h-2 w-2 rounded-full bg-primary ring-2 ring-background motion-safe:animate-pulse" />
 					)}
@@ -104,8 +104,8 @@ export default function Layout({ children, sidebar, bottomBar, sidebarExpanded =
 				{showSidebarToggle && showRecentsToggle && <SidebarToggleButton expanded={sidebarExpanded} />}
 				<span aria-hidden className="studio-mark"><i /><i /><i /><i /></span>
 				<span className="studio-wordmark">{m.appTitle()}</span>
-				<Button variant="ghost" size="sm" onClick={() => openSettings()} className="ms-auto gap-2">
-					<Settings className="size-4" />{m.settings()}
+				<Button variant="ghost" size="sm" aria-label={m.settings()} title={m.settings()} onClick={() => openSettings()} className="ms-auto size-10">
+					<WorkspaceIcon name="settings" className="size-5" />
 				</Button>
 			</header>
 			{settingsVisible && <SettingsModal visible={settingsVisible} setVisible={setSettingsVisible} scrollTo={settingsScrollTo} />}
