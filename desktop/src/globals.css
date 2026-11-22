@@ -3,6 +3,9 @@
 @plugin '@tailwindcss/typography';
 
 html.dictation-indicator-window,
+html.floating-dock-window,
+html.floating-dock-window body,
+html.floating-dock-window #root,
 html.dictation-indicator-window body,
 html.dictation-indicator-window #root {
 	background: transparent !important;

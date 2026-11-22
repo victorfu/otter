@@ -17,6 +17,11 @@ const BALL: f64 = 56.0;
 const MENU_WIDTH: f64 = 248.0;
 const GAP: f64 = 8.0;
 const EDGE: f64 = 8.0;
+/// Transparent margin around the ball and menu so their shadows are not clipped into a square.
+/// Must match `PAD` in `floating-dock-window.tsx`.
+const PAD: f64 = 12.0;
+/// The collapsed window: the ball plus its margin.
+const SLOT: f64 = BALL + 2.0 * PAD;
 
 /// While the menu is open the window is larger than the ball; this remembers where the ball was
 /// so collapsing puts it back exactly, and so a position is never saved from the open frame.
@@ -61,7 +66,7 @@ fn monitor_at(window: &WebviewWindow, x: f64, y: f64) -> Result<Monitor, String>
 
 fn create_window(app: &AppHandle) -> Result<WebviewWindow, String> {
     let window = WebviewWindowBuilder::new(app, WINDOW_LABEL, WebviewUrl::App("index.html?window=floating-dock".into()))
-        .inner_size(BALL, BALL)
+        .inner_size(SLOT, SLOT)
         .decorations(false)
         .resizable(false)
         .always_on_top(true)
@@ -106,7 +111,7 @@ fn create_window(app: &AppHandle) -> Result<WebviewWindow, String> {
         .map(work_area)
         .collect();
     let scale = primary.scale_factor();
-    let (x, y) = restore_position(saved_position(app), BALL * scale, &work_areas, work_area(&primary), EDGE * scale);
+    let (x, y) = restore_position(saved_position(app), SLOT * scale, &work_areas, work_area(&primary), (EDGE - PAD) * scale);
     window
         .set_position(PhysicalPosition::new(x.round() as i32, y.round() as i32))
         .map_err(|error| error.to_string())?;
@@ -168,7 +173,7 @@ pub fn set_floating_dock_expanded(
     if !expanded {
         if let Some((x, y)) = origin.take() {
             let scale = window.scale_factor().map_err(|error| error.to_string())?;
-            let ball = (BALL * scale).round() as u32;
+            let ball = (SLOT * scale).round() as u32;
             window
                 .set_size(PhysicalSize::new(ball, ball))
                 .map_err(|error| error.to_string())?;
@@ -188,10 +193,11 @@ pub fn set_floating_dock_expanded(
     };
     *origin = Some((x, y));
     let probe = window.scale_factor().map_err(|error| error.to_string())?;
-    let monitor = monitor_at(&window, x as f64 + BALL * probe / 2.0, y as f64 + BALL * probe / 2.0)?;
+    let monitor = monitor_at(&window, x as f64 + SLOT * probe / 2.0, y as f64 + SLOT * probe / 2.0)?;
     let scale = monitor.scale_factor();
-    let ball = Rect { x: x as f64, y: y as f64, w: BALL * scale, h: BALL * scale };
-    let (frame, placement) = expanded_frame(ball, MENU_WIDTH * scale, menu_height * scale, GAP * scale, work_area(&monitor));
+    let ball = Rect { x: x as f64 + PAD * scale, y: y as f64 + PAD * scale, w: BALL * scale, h: BALL * scale };
+    let (content, placement) = expanded_frame(ball, MENU_WIDTH * scale, menu_height * scale, GAP * scale, work_area(&monitor));
+    let frame = content.inflate(PAD * scale);
     window
         .set_size(PhysicalSize::new(frame.w.round() as u32, frame.h.round() as u32))
         .map_err(|error| error.to_string())?;
@@ -213,9 +219,9 @@ pub fn save_floating_dock_position(
     }
     let position = window.outer_position().map_err(|error| error.to_string())?;
     let scale = window.scale_factor().map_err(|error| error.to_string())?;
-    let size = BALL * scale;
+    let size = SLOT * scale;
     let monitor = monitor_at(&window, position.x as f64 + size / 2.0, position.y as f64 + size / 2.0)?;
-    let (x, y) = clamp_to_work_area(position.x as f64, position.y as f64, size, size, EDGE * scale, work_area(&monitor));
+    let (x, y) = clamp_to_work_area(position.x as f64, position.y as f64, size, size, (EDGE - PAD) * scale, work_area(&monitor));
     let (x, y) = (x.round() as i32, y.round() as i32);
     if (x, y) != (position.x, position.y) {
         window
@@ -247,6 +253,11 @@ impl Rect {
 
     fn contains(&self, x: f64, y: f64) -> bool {
         x >= self.x && x < self.right() && y >= self.y && y < self.bottom()
+    }
+
+    /// The same rectangle grown by `pad` on every side.
+    pub fn inflate(&self, pad: f64) -> Rect {
+        Rect { x: self.x - pad, y: self.y - pad, w: self.w + 2.0 * pad, h: self.h + 2.0 * pad }
     }
 }
 
@@ -314,6 +325,12 @@ mod tests {
         let (frame, placement) = expanded_frame(ball, 248.0, 300.0, 8.0, WORK);
         assert_eq!(placement, Placement { menu_below: false, align_right: true });
         assert_eq!(frame, Rect { x: 1658.0, y: 672.0, w: 248.0, h: 364.0 });
+    }
+
+    #[test]
+    fn padding_grows_the_frame_on_every_side() {
+        let content = Rect { x: 100.0, y: 200.0, w: 56.0, h: 56.0 };
+        assert_eq!(content.inflate(10.0), Rect { x: 90.0, y: 190.0, w: 76.0, h: 76.0 });
     }
 
     #[test]

@@ -28,9 +28,10 @@ import { m } from '~/paraglide/messages.js'
 import { getLocale, getTextDirection, setLocale } from '~/paraglide/runtime.js'
 import logoUrl from '../../../design/logo.png?url'
 
-/** Logical pixels; must match `BALL` and `GAP` in `floating_dock.rs`. */
+/** Logical pixels; must match `BALL`, `GAP` and `PAD` in `floating_dock.rs`. */
 const BALL = 56
 const GAP = 8
+const PAD = 12
 const MENU_WIDTH = 248
 /** How long the pointer may be outside the open menu before it closes. */
 const LEAVE_CLOSE_MS = 700
@@ -94,9 +95,8 @@ export default function FloatingDockWindow() {
 		document.title = m.appTitle()
 		document.body.dir = direction
 		document.documentElement.classList.toggle('dark', theme === 'dark')
-		document.documentElement.style.background = 'transparent'
-		document.body.style.background = 'transparent'
-		document.body.style.overflow = 'hidden'
+		document.documentElement.classList.add('floating-dock-window')
+		return () => document.documentElement.classList.remove('floating-dock-window')
 	}, [direction, theme])
 
 	useEffect(() => {
@@ -225,53 +225,56 @@ export default function FloatingDockWindow() {
 	const busy = status.recording || status.dictating
 
 	return (
-		<div className="relative h-screen w-screen select-none" onPointerLeave={onPointerLeave} onPointerEnter={onPointerEnter}>
-			<button
-				type="button"
-				aria-label={m.appTitle()}
-				aria-expanded={open}
-				title={dragOver ? m.floatingDockDrop() : m.appTitle()}
-				onPointerDown={onBallPointerDown}
-				onPointerMove={(event) => void onBallPointerMove(event)}
-				onPointerUp={onBallPointerUp}
-				style={{ width: BALL, height: BALL }}
-				className={cn(
-					'absolute flex items-center justify-center rounded-full bg-card shadow-[0_2px_10px_rgba(0,0,0,0.25)] ring-1 ring-border/60 transition-transform',
-					vertical,
-					horizontal,
-					dragOver && 'scale-110 ring-4 ring-primary',
-				)}>
-				<img src={logoUrl} alt="" draggable={false} className="pointer-events-none h-9 w-9" />
-				{busy && <span className="absolute right-1 top-1 h-2.5 w-2.5 animate-pulse rounded-full bg-red-500" />}
-			</button>
+		// The transparent padding leaves room for the shadows; without it they are clipped to a square.
+		<div className="h-screen w-screen select-none" style={{ padding: PAD }} onPointerLeave={onPointerLeave} onPointerEnter={onPointerEnter}>
+			<div className="relative h-full w-full">
+				<button
+					type="button"
+					aria-label={m.appTitle()}
+					aria-expanded={open}
+					title={dragOver ? m.floatingDockDrop() : m.appTitle()}
+					onPointerDown={onBallPointerDown}
+					onPointerMove={(event) => void onBallPointerMove(event)}
+					onPointerUp={onBallPointerUp}
+					style={{ width: BALL, height: BALL }}
+					className={cn(
+						'absolute flex items-center justify-center rounded-full bg-card shadow-[0_2px_10px_rgba(0,0,0,0.25)] ring-1 ring-border/60 transition-transform',
+						vertical,
+						horizontal,
+						dragOver && 'scale-110 ring-4 ring-primary',
+					)}>
+					<img src={logoUrl} alt="" draggable={false} className="pointer-events-none h-9 w-9" />
+					{busy && <span className="absolute right-1 top-1 h-2.5 w-2.5 animate-pulse rounded-full bg-red-500" />}
+				</button>
 
-			<div
-				ref={menuRef}
-				role="menu"
-				aria-hidden={!open}
-				style={{ width: MENU_WIDTH, ...menuOffset }}
-				className={cn(
-					'absolute rounded-2xl border border-border/60 bg-card p-1.5 text-card-foreground shadow-[0_4px_18px_rgba(0,0,0,0.22)]',
-					horizontal,
-					!open && 'invisible',
-				)}>
-				{dockMenuItems(status, shortcuts).map((item) => {
-					const Icon = (item.active && icons[item.id].active) || icons[item.id].idle
-					return (
-						<button
-							key={item.id}
-							type="button"
-							role="menuitem"
-							disabled={item.disabled}
-							tabIndex={open ? 0 : -1}
-							onClick={() => void run(item.action)}
-							className="flex h-10 w-full items-center gap-3 rounded-lg px-3 text-start text-sm transition-colors hover:bg-accent/60 disabled:pointer-events-none disabled:opacity-45">
-							<Icon className={cn('h-4 w-4 shrink-0', item.active ? 'fill-red-500 text-red-500' : 'text-muted-foreground')} />
-							<span className="flex-1 truncate">{label(item.id, item.active)}</span>
-							{item.shortcut && <span className="shrink-0 text-xs text-muted-foreground">{formatShortcut(item.shortcut, isMac)}</span>}
-						</button>
-					)
-				})}
+				<div
+					ref={menuRef}
+					role="menu"
+					aria-hidden={!open}
+					style={{ width: MENU_WIDTH, ...menuOffset }}
+					className={cn(
+						'absolute rounded-2xl border border-border/60 bg-card p-1.5 text-card-foreground shadow-[0_4px_18px_rgba(0,0,0,0.22)]',
+						horizontal,
+						!open && 'invisible',
+					)}>
+					{dockMenuItems(status, shortcuts).map((item) => {
+						const Icon = (item.active && icons[item.id].active) || icons[item.id].idle
+						return (
+							<button
+								key={item.id}
+								type="button"
+								role="menuitem"
+								disabled={item.disabled}
+								tabIndex={open ? 0 : -1}
+								onClick={() => void run(item.action)}
+								className="flex h-10 w-full items-center gap-3 rounded-lg px-3 text-start text-sm transition-colors hover:bg-accent/60 disabled:pointer-events-none disabled:opacity-45">
+								<Icon className={cn('h-4 w-4 shrink-0', item.active ? 'fill-red-500 text-red-500' : 'text-muted-foreground')} />
+								<span className="flex-1 truncate">{label(item.id, item.active)}</span>
+								{item.shortcut && <span className="shrink-0 text-xs text-muted-foreground">{formatShortcut(item.shortcut, isMac)}</span>}
+							</button>
+						)
+					})}
+				</div>
 			</div>
 		</div>
 	)
