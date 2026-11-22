@@ -25,6 +25,7 @@ const YTDLP_TICK_MS = 100
 // Module-level mock state (survives across invokes for the lifetime of the page).
 let dictationIndicatorEnabled = false
 let meetingDetectionEnabled = false
+let floatingDockEnabled = false
 let meetingPromptState: { source: 'meet' | 'zoom' | 'teams' } | null = null
 
 function sleep(ms: number) {
@@ -241,4 +242,15 @@ export const mediaMiscHandlers: CommandHandlerMap = {
 		meetingPromptState = null
 	},
 	meeting_prompt_ready: () => undefined,
+
+	// --- Floating dock -----------------------------------------------------------
+	// The browser can't resize or move a window, so expanding only reports where the menu opens.
+
+	get_floating_dock_enabled: () => floatingDockEnabled,
+	set_floating_dock_enabled: (args) => {
+		floatingDockEnabled = Boolean(args?.enabled)
+		emitMockEvent('floating-dock-enabled', floatingDockEnabled)
+	},
+	set_floating_dock_expanded: () => ({ menuBelow: true, alignRight: false }),
+	save_floating_dock_position: () => undefined,
 }
