@@ -1,4 +1,6 @@
 {
+	"aiTextDestination": "使用 AI 摘要或聽寫潤稿時，待處理的文字會送到 {service} 的伺服器（{server}）。",
+	"aiTextDestinationInvalid": "請輸入有效的 AI 伺服器網址，以確認文字會送往何處。",
 	"aborting": "正在中止操作",
 	"advanced": "進階設定",
 	"analyticsEnabled": "匿名使用統計",

@@ -1,5 +1,16 @@
 import { fetch } from '@tauri-apps/plugin-http'
-import { PLACEHOLDERS, type AiConnection } from './config'
+import { DEFAULT_AI, PLACEHOLDERS, type AiConnection } from './config'
+
+export function aiRequestUrl(connection: AiConnection): string {
+	switch (connection.platform) {
+		case 'claude':
+			return 'https://api.anthropic.com/v1/messages'
+		case 'ollama':
+			return `${connection.ollamaBaseUrl.replace(/\/+$/, '')}/api/generate`
+		case 'openai':
+			return `${(connection.openaiBaseUrl || DEFAULT_AI.connection.openaiBaseUrl).replace(/\/+$/, '')}/chat/completions`
+	}
+}
 
 /** Output ceiling; the input side of the context is what is left after it and a margin. */
 const MAX_OUTPUT_TOKENS = 8_192
@@ -123,7 +134,7 @@ class Ollama implements AiClient {
 		return { 'Content-Type': 'application/json', Origin: 'http://127.0.0.1' }
 	}
 	async ask(prompt: string) {
-		const response = await fetch(`${this.connection.ollamaBaseUrl.replace(/\/+$/, '')}/api/generate`, {
+		const response = await fetch(aiRequestUrl(this.connection), {
 			method: 'POST',
 			headers: this.headers(),
 			body: this.body(prompt, false),
@@ -132,7 +143,7 @@ class Ollama implements AiClient {
 		return (await response.json())?.response ?? ''
 	}
 	async stream(prompt: string, onToken: (text: string) => void) {
-		const response = await fetch(`${this.connection.ollamaBaseUrl.replace(/\/+$/, '')}/api/generate`, {
+		const response = await fetch(aiRequestUrl(this.connection), {
 			method: 'POST',
 			headers: this.headers(),
 			body: this.body(prompt, true),
@@ -157,9 +168,6 @@ class Ollama implements AiClient {
 
 class OpenAICompatible implements AiClient {
 	constructor(private connection: AiConnection) {}
-	private url() {
-		return `${(this.connection.openaiBaseUrl || 'https://api.openai.com/v1').replace(/\/+$/, '')}/chat/completions`
-	}
 	private headers() {
 		const headers: Record<string, string> = { 'Content-Type': 'application/json' }
 		if (this.connection.openaiApiKey) headers.Authorization = `Bearer ${this.connection.openaiApiKey}`
@@ -168,7 +176,7 @@ class OpenAICompatible implements AiClient {
 	private body(prompt: string, stream: boolean) {
 		// OpenAI's newer models reject `max_tokens` and require `max_completion_tokens` (#1667), but
 		// many OpenAI-compatible servers only know `max_tokens`, so the new name goes to OpenAI alone.
-		const limitKey = new URL(this.url()).hostname === 'api.openai.com' ? 'max_completion_tokens' : 'max_tokens'
+		const limitKey = new URL(aiRequestUrl(this.connection)).hostname === 'api.openai.com' ? 'max_completion_tokens' : 'max_tokens'
 		return JSON.stringify({
 			model: this.connection.model,
 			[limitKey]: outputTokens(this.connection.contextTokens),
@@ -177,12 +185,12 @@ class OpenAICompatible implements AiClient {
 		})
 	}
 	async ask(prompt: string) {
-		const response = await fetch(this.url(), { method: 'POST', headers: this.headers(), body: this.body(prompt, false) })
+		const response = await fetch(aiRequestUrl(this.connection), { method: 'POST', headers: this.headers(), body: this.body(prompt, false) })
 		if (!response.ok) throw await failure('OpenAI', response)
 		return (await response.json()).choices?.[0]?.message?.content ?? ''
 	}
 	async stream(prompt: string, onToken: (text: string) => void) {
-		const response = await fetch(this.url(), { method: 'POST', headers: this.headers(), body: this.body(prompt, true) })
+		const response = await fetch(aiRequestUrl(this.connection), { method: 'POST', headers: this.headers(), body: this.body(prompt, true) })
 		if (!response.ok) throw await failure('OpenAI', response)
 		let text = ''
 		await readLines(response, (line) => {
@@ -217,12 +225,12 @@ class Claude implements AiClient {
 		})
 	}
 	async ask(prompt: string) {
-		const response = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: this.headers(), body: this.body(prompt, false) })
+		const response = await fetch(aiRequestUrl(this.connection), { method: 'POST', headers: this.headers(), body: this.body(prompt, false) })
 		if (!response.ok) throw await failure('Claude', response)
 		return (await response.json()).content?.[0]?.text ?? ''
 	}
 	async stream(prompt: string, onToken: (text: string) => void) {
-		const response = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: this.headers(), body: this.body(prompt, true) })
+		const response = await fetch(aiRequestUrl(this.connection), { method: 'POST', headers: this.headers(), body: this.body(prompt, true) })
 		if (!response.ok) throw await failure('Claude', response)
 		let text = ''
 		await readLines(response, (line) => {

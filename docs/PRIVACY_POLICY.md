@@ -1,30 +1,32 @@
 ## Privacy Policy
 
-_Last updated: 2026-02-08_
+_Last updated: 2026-11-22_
 
-Thank you for choosing **Otter**! We are committed to ensuring your privacy and data security. This policy outlines how **Otter** handles data and user privacy.
-
----
-
-### 1. Offline Operation
-
-**Otter** operates fully offline. After the initial setup, where the model files are downloaded, all transcription happens entirely on your local device. No data is ever sent outside the app. **Otter** can also function completely offline, even if you disconnect your internet connection.
+- After the model is downloaded, Otter transcribes recordings on your device, even offline.
+- When an AI summary or dictation cleanup runs, Otter sends the text being processed to the AI server selected in Settings.
+- Otter saves recordings and transcripts as local files without adding file encryption.
 
 ---
 
-### 2. Data Collection
+### 1. Offline Transcription
 
-**Otter** collects anonymous, privacy-friendly analytics through [Aptabase](https://aptabase.com/) to help us identify and fix errors. This includes:
+Otter processes audio on your device. Once the model is downloaded, transcription works without an internet connection. Model downloads, update checks and optional online features can make network requests.
 
-- Event names (e.g. transcription started, failed)
-- Error messages (no file names or content)
-- OS name, app version, and country (coarse, no IP stored)
+---
 
-No personal data, file contents, transcription text, or identifying information is ever collected. Analytics can be disabled at any time in **Settings**.
+### 2. Data Sent by Optional Features
 
-**Optional Cloud Summarization**
+**AI summaries and dictation cleanup.** Both features are off by default. When a summary runs, Otter sends transcript text and the task prompt to the configured AI server. When dictation cleanup runs, it sends the dictated text and cleanup prompt. These requests do not include the recording. If automatic summaries are enabled, a completed transcription can trigger a request without another click.
 
-When using the **Summarize** option in the `More Options` menu (which is off by default), the transcription is sent to the Claude API for summarization. This feature is entirely optional, and users can choose whether or not to enable it. By default, this option is disabled, ensuring that no data is sent to the cloud without explicit user consent.
+In **Settings → AI**, check the service and server address before enabling either feature:
+
+- **Claude** sends requests to Anthropic at `https://api.anthropic.com`.
+- **OpenAI-compatible services** use the configured server, defaulting to `https://api.openai.com/v1`. A custom server may be operated by another provider.
+- **Ollama** defaults to `http://localhost:11434` on your computer. If you enter a remote server address, Otter sends the text to that server.
+
+The receiving service controls how it processes and retains the text. This includes any names or medical details present in the text.
+
+**Usage analytics.** Builds configured for [Aptabase](https://aptabase.com/) can send usage and diagnostic events when analytics is enabled. Examples include transcription duration, segment count, errors, operating system and app version. Otter scrubs file paths from error messages. Events may include a random installation ID that links events from the same installation across days. Otter does not attach recordings or transcript text to analytics events. You can turn analytics off in Settings.
 
 ---
 
@@ -42,7 +44,7 @@ When using the **Summarize** option in the `More Options` menu (which is off by 
 
 ### 5. Data Storage and Security
 
-There is no encryption involved in the app. Users have complete control over where and when transcription files are saved on their own computers. You are in full control of your transcription files and can delete them at any time.
+Otter does not add file encryption when saving recordings or transcripts. Users have complete control over where and when transcription files are saved on their own computers. You are in full control of your transcription files and can delete them at any time.
 
 ---
 
