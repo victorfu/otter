@@ -168,7 +168,6 @@ pub fn begin(app: &AppHandle) -> bool {
     };
     if marker.to == current {
         tracing::info!("updated {} -> {}", marker.from, marker.to);
-        crate::analytics::track_event_handle(app, crate::analytics::events::UPDATE_APPLIED);
         inner.notice = Some(Notice {
             from: marker.from.clone(),
             to: marker.to.clone(),
@@ -176,11 +175,6 @@ pub fn begin(app: &AppHandle) -> bool {
     } else {
         // The install reported success and the old version is still here.
         tracing::error!("update to {} did not take; still on {current}", marker.to);
-        crate::analytics::track_event_handle_with_props(
-            app,
-            crate::analytics::events::UPDATE_FAILED,
-            Some(serde_json::json!({ "stage": "relaunch" })),
-        );
     }
     marker.is_fresh(now_secs())
 }
@@ -426,11 +420,6 @@ async fn install(app: &AppHandle) -> Result<(), String> {
         Err(message) => {
             tracing::error!("update install failed: {message}");
             relaunch::discard(app);
-            crate::analytics::track_event_handle_with_props(
-                app,
-                crate::analytics::events::UPDATE_FAILED,
-                Some(serde_json::json!({ "stage": "install" })),
-            );
             set(app, |inner| {
                 inner.phase = Phase::Failed;
                 inner.error = Some(message.clone());

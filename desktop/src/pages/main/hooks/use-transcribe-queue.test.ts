@@ -31,14 +31,6 @@ vi.mock('@tauri-apps/api/event', () => ({
 vi.mock('@tauri-apps/api/webviewWindow', () => ({ getCurrentWebviewWindow: () => ({ unminimize: vi.fn(), setFocus: vi.fn() }) }))
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), warning: vi.fn(), success: vi.fn() } }))
 vi.mock('~/assets/success.mp3', () => ({ default: '' }))
-vi.mock('~/lib/analytics', () => ({
-	errorCode: vi.fn(),
-	trackGpuOutOfMemory: vi.fn(),
-	trackTranscribeCancelled: vi.fn(),
-	trackTranscribeFailed: vi.fn(),
-	trackTranscribeStarted: vi.fn(),
-	trackTranscribeSucceeded: vi.fn(),
-}))
 vi.mock('~/lib/keep-awake', () => ({ KEEP_AWAKE: { queue: 'queue' }, startKeepAwake: vi.fn(), stopKeepAwake: vi.fn() }))
 vi.mock('~/lib/notify', () => ({ notify: vi.fn() }))
 vi.mock('~/lib/gpu-memory', () => ({ gpuOutOfMemoryBefore: () => false, rememberGpuOutOfMemory: vi.fn() }))

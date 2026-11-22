@@ -114,18 +114,7 @@ pub async fn load_model(
 
     // Spawn server if not running
     if state_guard.process.is_none() {
-        match spawn_server(cpu_variant) {
-            Ok(process) => state_guard.process = Some(process),
-            Err(e) => {
-                let error_msg = format!("{:#}", e);
-                crate::analytics::track_event_handle_with_props(
-                    &app_handle,
-                    crate::analytics::events::SERVER_SPAWN_FAILED,
-                    Some(serde_json::json!({"error_message": error_msg})),
-                );
-                return Err(e.into());
-            }
-        }
+        state_guard.process = Some(spawn_server(cpu_variant)?);
     }
 
     // Load model via HTTP
@@ -150,11 +139,6 @@ pub async fn load_model(
         tracing::warn!(
             to = lower.as_str(),
             "server died with an illegal instruction while loading the model; retrying on a lower CPU build"
-        );
-        crate::analytics::track_event_handle_with_props(
-            &app_handle,
-            crate::analytics::events::SERVER_CPU_BASELINE_FALLBACK,
-            None,
         );
         state_guard.process = None;
         let process = spawn_server(lower).context("failed to respawn server on a lower CPU build")?;

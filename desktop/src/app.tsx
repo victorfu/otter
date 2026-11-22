@@ -19,6 +19,7 @@ import { BoundaryFallback } from './components/boundary-fallback'
 import ErrorModalWithContext from './components/error-modal-with-context'
 import { FilesProvider } from './providers/files-provider'
 import { HotkeyProvider } from './providers/hotkey'
+import { FloatingDockBridge } from './providers/floating-dock-bridge'
 import { RecordingShortcutProvider } from './providers/recording-shortcut'
 import { ToastProvider } from './providers/toast'
 import { Toaster } from '~/components/ui/sonner'
@@ -75,15 +76,17 @@ function AppContent() {
 							<ToastProvider>
 								<HotkeyProvider>
 									<RecordingShortcutProvider>
-										<ErrorModalWithContext />
-										<UpdateProgress />
-										<FilesProvider>
-											<Routes>
-												<Route path="/" element={<MainPage />} />
-												<Route path="/setup" element={<SetupPage />} />
-											</Routes>
-										</FilesProvider>
-										<Toaster position="bottom-right" />
+										<FloatingDockBridge>
+											<ErrorModalWithContext />
+											<UpdateProgress />
+											<FilesProvider>
+												<Routes>
+													<Route path="/" element={<MainPage />} />
+													<Route path="/setup" element={<SetupPage />} />
+												</Routes>
+											</FilesProvider>
+											<Toaster position="bottom-right" />
+										</FloatingDockBridge>
 									</RecordingShortcutProvider>
 								</HotkeyProvider>
 							</ToastProvider>

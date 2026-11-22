@@ -22,6 +22,9 @@ interface RecordingShortcutContextValue {
 	/** Keep the global toggle synchronized with recordings started from the regular UI. */
 	setNormalRecordingActive: (active: boolean) => void
 	isShortcutRecording: boolean
+	/** Any recording: from the shortcut, the floating dock, or the regular UI. */
+	isRecording: boolean
+	toggleRecording: () => Promise<void>
 }
 
 const RecordingShortcutContext = createContext<RecordingShortcutContextValue | null>(null)
@@ -50,6 +53,12 @@ export function RecordingShortcutProvider({ children }: { children: ReactNode })
 	const pressedRef = useRef(false)
 	const registeredRef = useRef<string | null>(null)
 	const registrationQueueRef = useRef<Promise<void>>(Promise.resolve())
+	const [isRecording, setIsRecording] = useState(false)
+
+	const markRecordingActive = useCallback((active: boolean) => {
+		normalRecordingActiveRef.current = active
+		setIsRecording(active)
+	}, [])
 
 	useEffect(() => {
 		dictationRecordingRef.current = dictation.isHotkeyRecording
@@ -74,14 +83,19 @@ export function RecordingShortcutProvider({ children }: { children: ReactNode })
 				(device): device is AudioDevice => device != null,
 			)
 			if (selectedDevices.length === 0) throw new Error(m.noDefaultMicrophone())
-			const outcome = await invoke<StartRecordOutcome | null>('start_record', { devices: selectedDevices, recordingName: null })
+			const outcome = await invoke<StartRecordOutcome | null>('start_record', {
+				devices: selectedDevices,
+				recordingName: null,
+				liveMicGain: readConfig(CONFIG_KEYS.liveMicGain, false),
+				autoRecordingVolume: readConfig(CONFIG_KEYS.autoRecordingVolume, false),
+			})
 			if (options.microphone && microphoneMissing) {
 				const savedName = readConfig<string | null>(CONFIG_KEYS.inputDeviceName, null)
 				warnDeviceFallback(savedName ?? String(savedMicrophoneId), microphone?.name ?? null)
 			}
 			for (const fallback of outcome?.deviceFallbacks ?? []) warnDeviceFallback(fallback.requested, fallback.used)
 			recordingRef.current = true
-			normalRecordingActiveRef.current = true
+			markRecordingActive(true)
 			setIsShortcutRecording(true)
 			return true
 		} catch (error) {
@@ -117,7 +131,7 @@ export function RecordingShortcutProvider({ children }: { children: ReactNode })
 
 	useEffect(() => {
 		function resetRecording() {
-			normalRecordingActiveRef.current = false
+			markRecordingActive(false)
 			stoppingRef.current = false
 			if (!recordingRef.current) return
 			recordingRef.current = false
@@ -196,8 +210,14 @@ export function RecordingShortcutProvider({ children }: { children: ReactNode })
 	}, [])
 
 	const setNormalRecordingActive = useCallback((active: boolean) => {
-		normalRecordingActiveRef.current = active
-	}, [])
+		markRecordingActive(active)
+	}, [markRecordingActive])
+
+	/** Start a recording, or stop the one in progress however it was started. */
+	const toggleRecording = useCallback(async () => {
+		if (normalRecordingActiveRef.current) await stopRecording()
+		else await startRecording()
+	}, [startRecording, stopRecording])
 
 	return (
 		<RecordingShortcutContext.Provider
@@ -209,6 +229,8 @@ export function RecordingShortcutProvider({ children }: { children: ReactNode })
 				setRecordingShortcutCapturing,
 				setNormalRecordingActive,
 				isShortcutRecording,
+				isRecording,
+				toggleRecording,
 			}}>
 			{children}
 		</RecordingShortcutContext.Provider>

@@ -25,6 +25,8 @@ const YTDLP_TICK_MS = 100
 // Module-level mock state (survives across invokes for the lifetime of the page).
 let dictationIndicatorEnabled = false
 let meetingDetectionEnabled = false
+let floatingDockEnabled = false
+let floatingDockMenuVisible = false
 let meetingPromptState: { source: 'meet' | 'zoom' | 'teams' } | null = null
 
 function sleep(ms: number) {
@@ -215,7 +217,6 @@ export const mediaMiscHandlers: CommandHandlerMap = {
 		console.info('[mock] open_microphone_settings')
 	},
 
-	track_analytics_event: () => undefined,
 
 	// --- Dictation indicator ----------------------------------------------------
 
@@ -242,4 +243,23 @@ export const mediaMiscHandlers: CommandHandlerMap = {
 		meetingPromptState = null
 	},
 	meeting_prompt_ready: () => undefined,
+
+	// --- Floating dock -----------------------------------------------------------
+	// The browser has no second window: open ?window=floating-dock-menu in its own tab to see the menu.
+
+	get_floating_dock_enabled: () => floatingDockEnabled,
+	set_floating_dock_enabled: (args) => {
+		floatingDockEnabled = Boolean(args?.enabled)
+		emitMockEvent('floating-dock-enabled', floatingDockEnabled)
+	},
+	toggle_floating_dock_menu: () => {
+		floatingDockMenuVisible = !floatingDockMenuVisible
+		emitMockEvent('floating-dock-menu-visible', floatingDockMenuVisible)
+	},
+	hide_floating_dock_menu: () => {
+		floatingDockMenuVisible = false
+		emitMockEvent('floating-dock-menu-visible', false)
+	},
+	floating_dock_menu_ready: () => undefined,
+	save_floating_dock_position: () => undefined,
 }

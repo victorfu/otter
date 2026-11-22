@@ -1,7 +1,6 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-mod analytics;
 mod cli;
 mod cmd;
 mod config;
@@ -10,9 +9,11 @@ mod diagnostics;
 mod dictation_indicator;
 mod error;
 mod ffmpeg;
+mod floating_dock;
 mod keepawake;
 mod logging;
 mod meeting_prompt;
+mod mic_level;
 mod server;
 mod setup;
 mod startup_cleanup;
@@ -40,9 +41,6 @@ use tauri_plugin_window_state::StateFlags;
 
 use error::LogError;
 
-/// Guards the clean-exit event: `ExitRequested` and `Exit` both fire on a quit.
-static EXIT_REPORTED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
-
 #[tokio::main]
 async fn main() -> Result<()> {
     // Attach console in Windows:
@@ -67,13 +65,7 @@ async fn main() -> Result<()> {
             tray::show_main_window(app);
             app.emit("single-instance", argv).map_err(|e| eyre!("{:?}", e)).log_error();
         }))
-        .setup(|app| {
-            setup::setup(app)?;
-            analytics::init(app);
-            analytics::track_event(app, analytics::events::APP_STARTED);
-
-            Ok(())
-        })
+        .setup(|app| setup::setup(app))
         .plugin(
             tauri_plugin_window_state::Builder::default()
                 .with_state_flags(!StateFlags::VISIBLE)
@@ -128,7 +120,6 @@ async fn main() -> Result<()> {
             cmd::server_cmd::get_api_base_url,
             cmd::server_cmd::start_api_server,
             cmd::server_cmd::stop_api_server,
-            cmd::app::track_analytics_event,
             cmd::app::get_commit_hash,
             cmd::app::is_avx2_enabled,
             cmd::app::is_online,
@@ -167,6 +158,12 @@ async fn main() -> Result<()> {
             dictation_indicator::get_dictation_indicator_state,
             dictation_indicator::dictation_indicator_ready,
             dictation_indicator::hide_dictation_indicator,
+            floating_dock::get_floating_dock_enabled,
+            floating_dock::set_floating_dock_enabled,
+            floating_dock::toggle_floating_dock_menu,
+            floating_dock::hide_floating_dock_menu,
+            floating_dock::floating_dock_menu_ready,
+            floating_dock::save_floating_dock_position,
             meeting_prompt::get_meeting_detection_enabled,
             meeting_prompt::set_meeting_detection_enabled,
             meeting_prompt::get_meeting_prompt_state,
@@ -195,14 +192,6 @@ async fn main() -> Result<()> {
             }
         }
         tauri::RunEvent::ExitRequested { .. } | tauri::RunEvent::Exit => {
-            // Both events fire on a normal quit (and the tray's `app.exit(0)` bypasses the
-            // webview entirely), so report the clean exit exactly once, from whichever
-            // arrives first. Nothing here prevents the exit, so this is never a false signal.
-            if !EXIT_REPORTED.swap(true, std::sync::atomic::Ordering::SeqCst) {
-                analytics::track_event_handle(app, analytics::events::APP_EXITED);
-                // Bounded: a slow or unreachable ingest host must not hold up quitting.
-                analytics::flush_events_bounded(std::time::Duration::from_secs(2));
-            }
             // A base URL left in the config file would point an agent at a dead port.
             cmd::config::set_api_base_url(app, None).log_error();
             let mutex = app.state::<tokio::sync::Mutex<setup::ServerState>>();

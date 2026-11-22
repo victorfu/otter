@@ -209,11 +209,6 @@ pub async fn transcribe(
             "transcription failed with the GPU enabled; reloading the model on the CPU and retrying once: {}",
             failure.error.message
         );
-        crate::analytics::track_event_handle_with_props(
-            &app_handle,
-            crate::analytics::events::SERVER_GPU_TRANSCRIBE_FALLBACK,
-            Some(serde_json::json!({ "died": failure.died })),
-        );
         // The segments streamed so far belong to the failed attempt; the retry sends them again.
         app_handle
             .emit_to("main", "transcribe_restart", transcription_id.as_deref())

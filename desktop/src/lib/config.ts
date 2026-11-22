@@ -11,7 +11,6 @@ export const modelCatalogURL = 'https://victorfu.github.io/otter/models.json'
 export const changelogURL = (version?: string) => `https://victorfu.github.io/otter/changelog${version ? `/${version}` : ''}`
 export const discordURL = 'https://discord.gg/EcxWSstQN8'
 export const supportOtterURL = 'https://victorfu.github.io/otter/?action=support-otter'
-export const privacyPolicyURL = 'https://victorfu.github.io/otter/?action=open-privacy-policy'
 export const storeFilename = 'app_config.json'
 
 /** What the catalog knows about a finished download, beyond the bytes themselves. */

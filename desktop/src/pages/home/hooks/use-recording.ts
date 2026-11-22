@@ -3,7 +3,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { type SetStateAction, useContext, useEffect, useState } from 'react'
 import { resolveSavedDevice, warnDeviceFallback, type AudioDevice, type StartRecordOutcome } from '~/lib/audio'
 import { CONFIG_KEYS } from '~/lib/config-keys'
-import { usePersisted } from '~/lib/config-store'
+import { readConfig, usePersisted } from '~/lib/config-store'
 import { KEEP_AWAKE, startKeepAwake, stopKeepAwake } from '~/lib/keep-awake'
 import { ensureSystemAudioPermission } from '~/lib/permissions'
 import { ErrorModalContext } from '~/providers/error-modal'
@@ -62,6 +62,8 @@ export function useRecording(onBeforeStart: () => void) {
 		try {
 			const outcome = await invoke<StartRecordOutcome | null>('start_record', {
 				devices: selectedDevices,
+				liveMicGain: readConfig(CONFIG_KEYS.liveMicGain, false),
+				autoRecordingVolume: readConfig(CONFIG_KEYS.autoRecordingVolume, false),
 				recordingName: recordingName.trim() || null,
 			})
 			// Unplugged between loading the list and pressing record: Rust recorded from the default.

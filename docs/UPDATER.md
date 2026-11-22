@@ -27,8 +27,6 @@ Settings → General: "Download updates automatically" (on). Off: nothing downlo
 
 Development and e2e builds never check on a schedule.
 
-Telemetry: `update_applied`, `update_failed` (`stage`: `install` or `relaunch`).
-
 In an e2e build, without a real update:
 
 ```console

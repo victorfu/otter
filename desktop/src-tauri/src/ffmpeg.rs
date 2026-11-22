@@ -227,9 +227,19 @@ pub fn normalize(input: PathBuf, output: PathBuf, additional_ffmpeg_args: Option
     Ok(())
 }
 
-pub fn merge_wav_files(a: PathBuf, b: PathBuf, dst: PathBuf) -> Result<()> {
+pub fn mic_gain_filter(db: u8) -> String {
+    format!("volume={db}dB,alimiter=limit=0.97:level=0:latency=1")
+}
+
+pub fn merge_wav_files(a: PathBuf, b: PathBuf, dst: PathBuf, mic_boost: Option<(usize, u8)>) -> Result<()> {
     let ffmpeg_path = find_ffmpeg_path().context("ffmpeg not found")?;
     let output = dst.to_str().context("tostr")?;
+    let mix = "amix=inputs=2:duration=longest:dropout_transition=0:normalize=0,alimiter=limit=0.97";
+    let filter = match mic_boost {
+        Some((0, db)) => format!("[0:a]{}[mic];[mic][1:a]{mix}", mic_gain_filter(db)),
+        Some((1, db)) => format!("[1:a]{}[mic];[0:a][mic]{mix}", mic_gain_filter(db)),
+        _ => mix.to_owned(),
+    };
 
     let mut cmd = Command::new(ffmpeg_path);
     cmd.args([
@@ -243,7 +253,7 @@ pub fn merge_wav_files(a: PathBuf, b: PathBuf, dst: PathBuf) -> Result<()> {
         // recording that had system audio selected. Sum instead, and let normalize() do the
         // single downmix to mono rather than producing stereo here just to collapse it later.
         // Summing can clip when the mic and the meeting are both loud, so cap the peaks.
-        "amix=inputs=2:duration=longest:dropout_transition=0:normalize=0,alimiter=limit=0.97",
+        &filter,
         output,
         "-hide_banner",
         "-y",

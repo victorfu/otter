@@ -3,6 +3,7 @@ import { getCurrentWindow } from '@tauri-apps/api/window'
 import { unregisterAll } from '@tauri-apps/plugin-global-shortcut'
 import './globals.css'
 import { loadConfigStore } from './lib/config-store'
+import { blockNativeContextMenu } from './lib/context-menu'
 import { runMigrations } from './lib/migrations'
 import Root from './root'
 
@@ -11,6 +12,9 @@ import Root from './root'
  * first paint — otherwise the window opens with the default theme and language and then corrects
  * itself. Migrations run after the load because they write through the same store.
  */
+// Every window (main, floating dock, indicators) starts here.
+blockNativeContextMenu(import.meta.env.DEV)
+
 async function start() {
 	await loadConfigStore()
 	runMigrations()

@@ -5,7 +5,7 @@ import { OPENAI_PATH } from '~/components/brand-glyph'
 import { m } from '~/paraglide/messages.js'
 import { ReactComponent as LinkIcon } from '~/icons/link.svg'
 import * as config from '~/lib/config'
-import { defaultModel, type AiPlatform, type AiSettings } from '~/lib/ai'
+import { aiRequestUrl, defaultModel, type AiPlatform, type AiSettings } from '~/lib/ai'
 import NumberField from '~/components/number-field'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
@@ -31,7 +31,7 @@ function LabelWithLink({ label, tooltip, onClick }: { label: string; tooltip: st
 const platformIcons: Record<AiPlatform, { path: string; title: string }> = {
 	claude: { path: siClaude.path, title: siClaude.title },
 	ollama: { path: siOllama.path, title: siOllama.title },
-	openai: { path: OPENAI_PATH, title: 'OpenAI' },
+	openai: { path: OPENAI_PATH, title: 'OpenAI Compatible' },
 }
 
 function PlatformOption({ platform }: { platform: AiPlatform }) {
@@ -72,10 +72,17 @@ export function AiSection({ vm, onOpenPrompt }: { vm: SettingsViewModel; onOpenP
 	const setTask = <T extends AiTaskId>(task: T, patch: Partial<AiSettings['tasks'][T]>) =>
 		setAi({ ...ai, tasks: { ...tasks, [task]: { ...tasks[task], ...patch } } })
 	const test = vm.aiTest
+	const requestUrl = aiRequestUrl(connection)
+	const destination = URL.canParse(requestUrl) ? new URL(requestUrl) : null
 
 	return (
 		<div className="space-y-6">
 			<SettingsGroup title={m.aiTasks()}>
+				<SettingsNote>
+					{destination && ['https:', 'http:'].includes(destination.protocol)
+						? m.aiTextDestination({ service: platformIcons[connection.platform].title, server: destination.origin })
+						: m.aiTextDestinationInvalid()}
+				</SettingsNote>
 				<SettingsRow label={m.aiSummaryTask()} description={presetLabel(tasks.summary.preset)}>
 					<Button variant="outline" size="sm" className="rounded-lg" onClick={() => onOpenPrompt('summary')}>
 						{m.aiEditPrompt()}

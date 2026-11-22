@@ -13,7 +13,6 @@ export const CONFIG_KEYS = {
 	skippedSetup: 'general.skippedSetup',
 	closeToTray: 'general.closeToTray',
 	preventSleep: 'general.preventSleep',
-	analyticsEnabled: 'analytics_enabled',
 	/** `stable` or `beta`: which website channel file the updater follows. */
 	updateChannel: 'general.updateChannel',
 	/** Download updates in the background and install them at the next quit or launch. Read by Rust. */
@@ -55,6 +54,8 @@ export const CONFIG_KEYS = {
 	recordingShortcutEnabled: 'recording.shortcutEnabled',
 	recordingShortcut: 'recording.shortcut',
 	meetingDetectionEnabled: 'recording.meetingDetectionEnabled',
+	liveMicGain: 'recording.liveMicGain',
+	autoRecordingVolume: 'recording.autoVolume',
 	autoTranscribeAfterRecording: 'recording.autoTranscribeAfterRecording',
 
 	// Reading the transcript

@@ -13,7 +13,7 @@ export function useTray(enabled: boolean, locale: string) {
 	useEffect(() => {
 		void invoke('set_tray', {
 			enabled,
-			labels: { show: m.trayShow(), hide: m.trayHide(), quit: m.trayQuit() },
+			labels: { show: m.trayShow(), hide: m.trayHide(), quit: m.trayQuit(), floatingDock: m.trayFloatingDock() },
 		}).catch((error) => console.error('failed to update the tray:', error))
 	}, [enabled, locale])
 }

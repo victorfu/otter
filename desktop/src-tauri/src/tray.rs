@@ -5,7 +5,7 @@ use eyre::{eyre, Result};
 use serde::Deserialize;
 use std::sync::Mutex;
 use tauri::{
-    menu::{MenuBuilder, MenuItemBuilder},
+    menu::{CheckMenuItem, CheckMenuItemBuilder, MenuBuilder, MenuItemBuilder},
     tray::{TrayIcon, TrayIconBuilder},
     AppHandle, Manager,
 };
@@ -19,11 +19,24 @@ pub struct TrayLabels {
     pub show: String,
     pub hide: String,
     pub quit: String,
+    #[serde(rename = "floatingDock")]
+    pub floating_dock: String,
 }
 
 /// Reuse one icon and its menu event handlers across preference changes.
 #[derive(Default)]
-pub struct TrayState(Mutex<Option<TrayIcon>>);
+pub struct TrayState(Mutex<Option<TrayIcon>>, Mutex<Option<CheckMenuItem<tauri::Wry>>>);
+
+/// Keep the tray's "Show floating dock" check in step when the setting changes elsewhere.
+pub fn sync_floating_dock(app: &AppHandle, enabled: bool) {
+    let state = app.state::<TrayState>();
+    let Ok(item) = state.1.lock() else {
+        return;
+    };
+    if let Some(item) = item.as_ref() {
+        item.set_checked(enabled).map_err(|error| eyre!("{error:?}")).log_error();
+    }
+}
 
 pub fn show_main_window(app: &AppHandle) {
     let Some(window) = app.get_webview_window("main") else {
@@ -56,8 +69,18 @@ pub fn apply(app: &AppHandle, enabled: bool, labels: TrayLabels) -> Result<()> {
 
     let show = MenuItemBuilder::with_id("show", labels.show).build(app)?;
     let hide = MenuItemBuilder::with_id("hide", labels.hide).build(app)?;
+    let floating_dock = CheckMenuItemBuilder::with_id("floating-dock", labels.floating_dock)
+        .checked(crate::floating_dock::is_enabled(app))
+        .build(app)?;
     let quit = MenuItemBuilder::with_id("quit", labels.quit).build(app)?;
-    let menu = MenuBuilder::new(app).items(&[&show, &hide, &quit]).build()?;
+    let menu = MenuBuilder::new(app)
+        .items(&[&show, &hide, &floating_dock])
+        .separator()
+        .item(&quit)
+        .build()?;
+    if let Ok(mut item) = state.1.lock() {
+        *item = Some(floating_dock);
+    }
 
     if let Some(tray) = current.as_ref() {
         tray.set_menu(Some(menu))?;
@@ -92,6 +115,18 @@ pub fn apply(app: &AppHandle, enabled: bool, labels: TrayLabels) -> Result<()> {
         .on_menu_event(|app, event| match event.id.as_ref() {
             "show" => show_main_window(app),
             "hide" => hide_main_window(app),
+            "floating-dock" => {
+                // Creating a webview window inside a menu event handler deadlocks on Windows.
+                let app = app.clone();
+                tauri::async_runtime::spawn(async move {
+                    let enabled = !crate::floating_dock::is_enabled(&app);
+                    if let Err(error) = crate::floating_dock::set_enabled(&app, enabled) {
+                        tracing::error!("could not toggle the floating dock: {error}");
+                        // The menu flipped its own check; put it back.
+                        sync_floating_dock(&app, !enabled);
+                    }
+                });
+            }
             // Exit rather than close the window: the window's close handler hides it instead.
             "quit" => app.exit(0),
             _ => {}

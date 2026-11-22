@@ -4,14 +4,12 @@ import { notify } from '~/lib/notify'
 import { emit, listen } from '@tauri-apps/api/event'
 import { register, unregister, isRegistered } from '@tauri-apps/plugin-global-shortcut'
 import * as clipboard from '@tauri-apps/plugin-clipboard-manager'
-import { errorCode, trackTranscribeFailed, trackTranscribeStarted, trackTranscribeSucceeded } from '~/lib/analytics'
 import { AudioDevice, selectInputDevice } from '~/lib/audio'
 import { CONFIG_KEYS } from '~/lib/config-keys'
 import { gpuOutOfMemoryBefore } from '~/lib/gpu-memory'
 import { readConfig, usePersisted } from '~/lib/config-store'
 import { createClient, fillPrompt } from '~/lib/ai'
 import { withoutUnsupportedOptions } from '~/lib/model'
-import { isUserError } from '~/lib/server-errors'
 import * as transcript from '~/lib/transcript'
 import { usePreferenceProvider } from '~/providers/preference'
 import { m } from '~/paraglide/messages.js'
@@ -44,6 +42,7 @@ interface HotkeyContextType {
 	hotkeyNormalizeOutput: boolean
 	setHotkeyNormalizeOutput: (enabled: boolean) => void
 	isHotkeyRecording: boolean
+	toggleDictation: () => Promise<void>
 }
 
 const HotkeyContext = createContext<HotkeyContextType | null>(null)
@@ -59,14 +58,6 @@ function getErrorMessage(error: unknown): string {
 		if (typeof message === 'string') return message
 	}
 	return String(error)
-}
-
-function getErrorCode(error: unknown): string | undefined {
-	if (typeof error === 'object' && error !== null && 'code' in error) {
-		const code = (error as { code?: unknown }).code
-		if (typeof code === 'string') return code
-	}
-	return undefined
 }
 
 export function HotkeyProvider({ children }: { children: ReactNode }) {
@@ -139,6 +130,8 @@ export function HotkeyProvider({ children }: { children: ReactNode }) {
 
 			await invoke('start_record', {
 				devices: [input],
+				liveMicGain: readConfig(CONFIG_KEYS.liveMicGain, false),
+				autoRecordingVolume: readConfig(CONFIG_KEYS.autoRecordingVolume, false),
 				recordingName: null,
 			})
 			indicatorSessionRef.current += 1
@@ -173,9 +166,6 @@ export function HotkeyProvider({ children }: { children: ReactNode }) {
 
 			showIndicator('transcribing')
 
-			// Dictation is a transcription like any other: one start, one terminal event.
-			trackTranscribeStarted('hotkey', path)
-			let transcribed = false
 			try {
 				const modelPath = preferenceRef.current.modelPath
 				if (!modelPath) {
@@ -195,13 +185,7 @@ export function HotkeyProvider({ children }: { children: ReactNode }) {
 					...withoutUnsupportedOptions(preferenceRef.current.modelOptions, preferenceRef.current.modelMetadata?.capabilities),
 					...(requiresVad ? { vad_model: `${modelsFolder}/${config.vadModelFilename}` } : {}),
 				}
-				const startedAt = performance.now()
 				const res: transcript.Transcript = await invoke('transcribe', { options, transcriptionId: `hotkey-${crypto.randomUUID()}` })
-				transcribed = true
-				trackTranscribeSucceeded('hotkey', {
-					durationSeconds: Math.round((performance.now() - startedAt) / 1000),
-					segmentsCount: res.segments.length,
-				})
 				let resultText = transcript.asText(res.segments, m.speakerPrefix())
 
 				// The dictation clean-up task has its own prompt; the summary prompt never touches
@@ -228,16 +212,6 @@ export function HotkeyProvider({ children }: { children: ReactNode }) {
 			} catch (error) {
 				console.error('Hotkey transcription error:', error)
 				const message = getErrorMessage(error)
-				// Dictation has no cancel and no error modal, so the failure event is the only trace it leaves.
-				// Anything that goes wrong after the transcript is in hand already reported its success.
-				if (!transcribed) {
-					const code = getErrorCode(error)
-					trackTranscribeFailed('hotkey', path, {
-						errorCode: errorCode(error),
-						errorMessage: message,
-						userError: Boolean(code && isUserError(code)),
-					})
-				}
 				finishIndicator('error', { message })
 				await notify('Otter', message)
 			} finally {
@@ -370,6 +344,12 @@ export function HotkeyProvider({ children }: { children: ReactNode }) {
 		})
 	}, [])
 
+	/** A click (the floating dock) always toggles, whatever the shortcut's activation mode. */
+	const toggleDictation = useCallback(async () => {
+		if (isHotkeyRecordingRef.current) await handleHotkeyUp()
+		else await handleHotkeyDown()
+	}, [handleHotkeyDown, handleHotkeyUp])
+
 	const value: HotkeyContextType = {
 		hotkeyEnabled,
 		setHotkeyEnabled,
@@ -387,6 +367,7 @@ export function HotkeyProvider({ children }: { children: ReactNode }) {
 		hotkeyNormalizeOutput,
 		setHotkeyNormalizeOutput,
 		isHotkeyRecording,
+		toggleDictation,
 	}
 
 	return <HotkeyContext.Provider value={value}>{children}</HotkeyContext.Provider>
