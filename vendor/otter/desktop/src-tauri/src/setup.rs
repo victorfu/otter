@@ -19,7 +19,6 @@ pub static STATIC_APP: Lazy<std::sync::Mutex<Option<tauri::AppHandle>>> = Lazy::
 #[derive(Default, Clone, Copy, serde::Serialize)]
 pub struct WindowChrome {
     material: bool,
-    overlay: bool,
 }
 
 #[tauri::command]
@@ -200,7 +199,7 @@ pub fn setup(app: &App) -> Result<(), Box<dyn std::error::Error>> {
             .traffic_light_position(tauri::LogicalPosition::new(16.0, 23.0))
             .transparent(true);
         #[cfg(windows)]
-        let builder = builder.transparent(true);
+        let builder = builder.decorations(true);
         match builder.build() {
             Ok(_window) => {
                 #[cfg(any(windows, target_os = "macos"))]
@@ -209,18 +208,15 @@ pub fn setup(app: &App) -> Result<(), Box<dyn std::error::Error>> {
                     let mut chrome = state.lock().unwrap_or_else(|e| e.into_inner());
                     #[cfg(windows)]
                     {
-                        chrome.material = window_vibrancy::apply_mica(&_window, None)
-                            .or_else(|_| window_vibrancy::apply_acrylic(&_window, None))
-                            .is_ok();
-                        match crate::window_frame::install(&_window) {
-                            Ok(()) => chrome.overlay = true,
-                            Err(error) => tracing::warn!("native title bar: {error}"),
+                        // Keep the system non-client frame and its move/resize loop. On Windows 10
+                        // use the solid WebView surface: Acrylic can stall interactive window moves.
+                        if window_vibrancy::apply_mica(&_window, None).is_ok() {
+                            chrome.material = _window.set_background_color(Some(tauri::window::Color(0, 0, 0, 0))).is_ok();
                         }
                     }
                     #[cfg(target_os = "macos")]
                     {
                         use window_vibrancy::{apply_vibrancy, NSVisualEffectMaterial};
-                        chrome.overlay = true;
                         chrome.material = apply_vibrancy(&_window, NSVisualEffectMaterial::Sidebar, None, None).is_ok();
                     }
                 }

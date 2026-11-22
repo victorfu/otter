@@ -140,7 +140,7 @@ export default function Layout({ children, sidebar, bottomBar, onBrowse, onNew, 
 
 	return (
 		<div className="flex h-screen min-h-0 flex-col overflow-hidden">
-			<header data-tauri-drag-region className="studio-header" style={{ paddingLeft: titlebarInset() }}>
+			<header data-tauri-drag-region={mac && native ? true : undefined} className="studio-header" style={{ paddingLeft: titlebarInset() }}>
 				{os === 'windows' && (native ? (
 					<Button variant="ghost" size="iconSm" aria-label={m.appTitle()} aria-haspopup="menu" onClick={event => void popAppMenu(event.currentTarget)}><MenuGlyph /></Button>
 				) : (
@@ -153,7 +153,7 @@ export default function Layout({ children, sidebar, bottomBar, onBrowse, onNew, 
 				{showSidebarToggle && showRecentsToggle && <SidebarToggleButton expanded={sidebarExpanded} shortcut={keyLabel('b')} />}
 				<span aria-hidden className="studio-mark" />
 				<span className="studio-wordmark">{m.appTitle()}</span>
-				{projectName && <span data-tauri-drag-region className="window-project min-w-0 truncate text-sm text-muted-foreground">{projectName}</span>}
+				{projectName && <span data-tauri-drag-region={mac && native ? true : undefined} className="window-project min-w-0 truncate text-sm text-muted-foreground">{projectName}</span>}
 				<div id="title-search" className="ms-auto min-w-0" />
 				<Tooltip><TooltipTrigger asChild>
 					<Button variant="ghost" size="sm" aria-label={m.settings()} onClick={() => openSettings()} className="size-9 shrink-0">

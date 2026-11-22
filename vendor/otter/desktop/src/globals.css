@@ -786,7 +786,6 @@ html.native-material,html.native-material body { background:transparent; }
 	background-color:var(--glass); backdrop-filter:blur(20px) saturate(1.12);
 }
 .studio-header { height:46px; position:relative; }
-html[data-frame="dwm"] .studio-header { padding-right:150px; }
 .studio-session-sidebar .studio-directory { background:transparent; }
 .studio-session-sidebar .project-row { border-radius:7px; }
 .studio-mark { color:var(--foreground); }

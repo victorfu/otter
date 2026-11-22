@@ -1,3 +1,4 @@
+import { isMacOverlayTitlebar } from '~/components/layout'
 import { motion } from 'framer-motion'
 import { m } from '~/paraglide/messages.js'
 import { viewModel } from './view-model'
@@ -12,7 +13,7 @@ function App() {
 
 	return (
 		<div className="flex min-h-screen items-center justify-center px-5 py-10">
-			<div data-tauri-drag-region className="fixed inset-x-0 top-0 h-[46px]" />
+			{isMacOverlayTitlebar() && <div data-tauri-drag-region className="fixed inset-x-0 top-0 h-[46px]" />}
 			<motion.div
 				initial={{ opacity: 0, y: 8 }}
 				animate={{ opacity: 1, y: 0 }}

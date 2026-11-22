@@ -46,9 +46,8 @@ function AppContent() {
 		if (!isNativeDesktop()) return
 		let mounted = true
 		let dispose: (() => void) | undefined
-		void invoke<{ material: boolean; overlay: boolean }>('window_chrome').then(chrome => {
+		void invoke<{ material: boolean }>('window_chrome').then(chrome => {
 			if (!mounted) return
-			if (os === 'windows' && chrome.overlay) root.dataset.frame = 'dwm'
 			root.classList.toggle('native-material', chrome.material)
 			if (chrome.material) dispose = mountPopoverMaterial()
 		}).catch(error => console.warn('Window appearance unavailable', error))
@@ -56,7 +55,6 @@ function AppContent() {
 			mounted = false
 			dispose?.()
 			root.classList.remove('native-material')
-			delete root.dataset.frame
 		}
 	}, [])
 

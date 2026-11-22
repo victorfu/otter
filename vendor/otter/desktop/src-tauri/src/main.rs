@@ -216,6 +216,3 @@ async fn main() -> Result<()> {
     });
     Ok(())
 }
-
-#[cfg(windows)]
-mod window_frame;
