@@ -796,9 +796,11 @@ html.native-material,html.native-material body { background:transparent; }
 [role=menu],[data-radix-popper-content-wrapper] > :is([role=dialog],[role=listbox]) {
 	background-color:var(--floating); backdrop-filter:blur(22px); border:1px solid var(--border);
 }
-/* Over the Settings panel, which already blurs what is behind it, a second backdrop blur makes
-   WebKit re-filter the panel on every open frame and hover. The menu is 90% opaque anyway. */
-body:has(.preferences-panel) [data-radix-popper-content-wrapper] > :is([role=dialog],[role=listbox],[role=menu]) {
+/* A backdrop blur under a menu makes WebKit re-filter everything behind it on every open frame and
+   hover, and the glass bars and Settings panel behind are already blurred. The menu is 90% opaque
+   anyway, so the long language lists and anything over Settings use the solid popover color. */
+body:has(.preferences-panel) [data-radix-popper-content-wrapper] > :is([role=dialog],[role=listbox],[role=menu]),
+[data-radix-popper-content-wrapper] > .language-menu {
 	background-color:var(--popover); backdrop-filter:none;
 }
 .dark { --shadow:0 0 0 1px var(--border); --shadow-sm:none; --shadow-md:var(--shadow); --shadow-lg:var(--shadow); --shadow-xl:var(--shadow); --shadow-2xl:var(--shadow); }
