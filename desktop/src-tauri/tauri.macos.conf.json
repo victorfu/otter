@@ -1,5 +1,12 @@
 {
 	"bundle": {
+		"icon": [
+			"icons/macos/32x32.png",
+			"icons/macos/128x128.png",
+			"icons/macos/256x256.png",
+			"icons/macos/512x512.png",
+			"icons/macos/icon.icns"
+		],
 		"externalBin": ["binaries/otter-server", "binaries/ffmpeg"],
 		"macOS": {
 			"entitlements": "entitlements.plist",

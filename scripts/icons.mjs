@@ -15,3 +15,4 @@ copyFileSync(master, path.join(app, "website", "public", "logo.png"));
 const python = process.platform === "win32" ? "python" : "python3";
 run(python, ["scripts/windows-icons.py"]);
 run(python, ["scripts/linux-icons.py"]);
+run(python, ["scripts/macos-icons.py"]);
