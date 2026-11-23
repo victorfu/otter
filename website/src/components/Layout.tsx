@@ -34,7 +34,8 @@ export default function Layout() {
 	return (
 		<div dir={direction} className="flex min-h-dvh flex-col bg-background text-foreground">
 			<Nav locale={locale} availableLocales={availableLocales} onLocaleChange={onLocaleChange} />
-			<main className="flex-1">
+			{/* Keyed by locale: route pages read their messages at render, and nothing else tells them the language changed. */}
+			<main key={locale} className="flex-1">
 				<Outlet />
 			</main>
 			<Footer onOpenPrivacyPolicy={onOpenPrivacyPolicy} />
