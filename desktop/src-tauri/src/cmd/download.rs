@@ -5,8 +5,10 @@ use futures_util::StreamExt;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::{
+    collections::HashSet,
     io::{Read, Write},
     path::{Path, PathBuf},
+    sync::{LazyLock, Mutex, MutexGuard},
     time::Duration,
 };
 use tauri::{Emitter, Listener, Manager};
@@ -66,6 +68,44 @@ fn partial_path(path: &Path) -> PathBuf {
     let mut partial = path.as_os_str().to_os_string();
     partial.push(".part");
     PathBuf::from(partial)
+}
+
+/// The `.part` files being written right now. Opening the settings or the main page sweeps the
+/// models folder for leftovers, and on macOS deleting a file mid-download goes unnoticed until the
+/// finished bytes have nowhere to be renamed from.
+static ACTIVE_PARTIALS: LazyLock<Mutex<HashSet<PathBuf>>> = LazyLock::new(Default::default);
+
+fn active_partials() -> MutexGuard<'static, HashSet<PathBuf>> {
+    ACTIVE_PARTIALS.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+}
+
+/// Holds a `.part` out of the sweep for as long as its download runs, however that ends.
+struct ActivePartial(PathBuf);
+
+impl ActivePartial {
+    fn register(partial: &Path) -> Self {
+        let key = active_key(partial);
+        active_partials().insert(key.clone());
+        Self(key)
+    }
+}
+
+impl Drop for ActivePartial {
+    fn drop(&mut self) {
+        active_partials().remove(&self.0);
+    }
+}
+
+/// The resolved folder (it exists; the `.part` may not yet) plus the file name, so the sweep's
+/// canonical listing and a download's destination name the same file the same way.
+fn active_key(partial: &Path) -> PathBuf {
+    match (
+        partial.parent().and_then(|parent| std::fs::canonicalize(parent).ok()),
+        partial.file_name(),
+    ) {
+        (Some(folder), Some(name)) => folder.join(name),
+        _ => partial.to_path_buf(),
+    }
 }
 
 fn remove_if_exists(path: &Path) -> Result<()> {
@@ -240,6 +280,7 @@ pub(super) async fn download_to_partial(
     show_system_progress: bool,
 ) -> Result<DownloadOutcome> {
     let partial = partial_path(destination);
+    let _active = ActivePartial::register(&partial);
 
     // A previous run may have finished and verified the download but failed to swap it in. Those
     // bytes are still good, so try publishing them before spending another download.
@@ -433,7 +474,9 @@ fn cleanup_partial_downloads_in(models_folder: &Path, folder: String) -> Command
 
     for entry in entries.flatten() {
         let path = entry.path();
-        if path.extension().and_then(|extension| extension.to_str()) != Some("part") {
+        if path.extension().and_then(|extension| extension.to_str()) != Some("part")
+            || active_partials().contains(&active_key(&path))
+        {
             continue;
         }
         match std::fs::remove_file(&path) {
@@ -449,7 +492,7 @@ fn cleanup_partial_downloads_in(models_folder: &Path, folder: String) -> Command
 mod tests {
     use super::{
         check_model_files_in, cleanup_partial_downloads_in, download_client, partial_path, publish_download, remove_if_exists,
-        validate_model_file, verify_finished_download, DownloadIntegrity, MIN_MODEL_SIZE,
+        validate_model_file, verify_finished_download, ActivePartial, DownloadIntegrity, MIN_MODEL_SIZE,
     };
     use std::{fs, path::Path, path::PathBuf, time::SystemTime};
 
@@ -615,6 +658,26 @@ mod tests {
         assert_eq!(removed.len(), 1);
         assert!(model.exists());
         assert!(!leftover.exists());
+        fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn cleanup_partial_downloads_spares_a_download_in_progress() {
+        let dir = test_dir("sweep-active");
+        fs::create_dir_all(&dir).unwrap();
+        let downloading = dir.join("breeze.bin.part");
+        fs::write(&downloading, b"half").unwrap();
+
+        let active = ActivePartial::register(&downloading);
+        let removed = cleanup_partial_downloads_in(&dir, dir.to_string_lossy().to_string()).unwrap();
+        assert!(removed.is_empty());
+        assert!(downloading.exists());
+
+        // Once the download is over, the same file is a leftover like any other.
+        drop(active);
+        let removed = cleanup_partial_downloads_in(&dir, dir.to_string_lossy().to_string()).unwrap();
+        assert_eq!(removed.len(), 1);
+        assert!(!downloading.exists());
         fs::remove_dir_all(dir).unwrap();
     }
 
