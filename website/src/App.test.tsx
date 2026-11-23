@@ -9,6 +9,6 @@ import { m } from './paraglide/messages.js'
 it('sends an unknown path such as /features to the home page', async () => {
 	window.history.pushState({}, '', '/otter/features')
 	render(<App />)
-	expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent(m.title())
+	expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent(m['hero-title']())
 	expect(window.location.pathname).toMatch(/^\/otter\/?$/)
 })
