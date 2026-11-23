@@ -20,6 +20,14 @@ function languageName(code: string, locale: string) {
 	}
 }
 
+/**
+ * Search terms a language's names miss. The catalog groups by ISO 639-1, so Taiwan's models sit
+ * under Chinese, where "Taiwan" or "繁體" would otherwise find nothing.
+ */
+const EXTRA_KEYWORDS: Record<string, string[]> = {
+	zh: ['Taiwan', 'Mandarin', 'Traditional', '台灣', '臺灣', '華語', '國語', '繁體', '中文'],
+}
+
 /** The transcription-language control, over the languages the catalog has models for. */
 function CatalogLanguagePicker({ catalog, locale }: { catalog: ModelCatalogViewModel; locale: string }) {
 	const [query, setQuery] = useState('')
@@ -31,7 +39,7 @@ function CatalogLanguagePicker({ catalog, locale }: { catalog: ModelCatalogViewM
 	const entries = useMemo<LanguageOption[]>(
 		() =>
 			catalog.languages
-				.map((code) => ({ code, label: languageName(code, locale), keywords: [languageName(code, 'en'), languageName(code, code)], flagCode: code }))
+				.map((code) => ({ code, label: languageName(code, locale), keywords: [languageName(code, 'en'), languageName(code, code), ...(EXTRA_KEYWORDS[code] ?? [])], flagCode: code }))
 				.sort((a, b) => a.label.localeCompare(b.label, locale)),
 		[catalog.languages, locale],
 	)
