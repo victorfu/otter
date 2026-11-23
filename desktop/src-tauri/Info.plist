@@ -3,10 +3,8 @@
 <plist version="1.0">
 <dict>
     <key>NSMicrophoneUsageDescription</key>
-    <string>This app requires microphone access to record audio.</string>
+    <string>Otter records your microphone so it can transcribe what you say. Transcription runs on this Mac.</string>
     <key>NSAudioCaptureUsageDescription</key>
-    <string>This app requires system audio access to record your device's audio output.</string>
-    <key>NSSystemExtensionUsageDescription</key>
-    <string>This app requires system extension access to capture audio output.</string>
+    <string>Otter records the sound your Mac plays, such as the other people on a call, so it can transcribe them. Transcription runs on this Mac.</string>
 </dict>
 </plist>
