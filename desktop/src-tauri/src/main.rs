@@ -69,7 +69,8 @@ async fn main() -> Result<()> {
         .plugin(
             tauri_plugin_window_state::Builder::default()
                 .with_state_flags(!StateFlags::VISIBLE)
-                .with_denylist(&["meeting-prompt"])
+                // The dock places and sizes its own windows; a restored size would undo that.
+                .with_denylist(&["meeting-prompt", "floating-dock", "floating-dock-menu"])
                 .build(),
         )
         .plugin(tauri_plugin_store::Builder::default().build())
