@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Copied from ../docs by `chore website-build`; the source of truth is docs/.
+public/docs/
