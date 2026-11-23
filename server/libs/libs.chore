@@ -58,9 +58,7 @@ task fetch-libs requested=auto {
 	echo "platform: $platform"
 	echo "release: $tag"
 	mkdir $ROOT/target
-	source=$repo
-	if $tag == libraries-ggml-v0.22.0-r8 { source=thewh1teagle/vibe }
-	download gh://$source/$tag/ggml-libs-$platform.tar.gz $ROOT/target/ggml-libs-$platform.tar.gz --timeout 120
+	download gh://$repo/$tag/ggml-libs-$platform.tar.gz $ROOT/target/ggml-libs-$platform.tar.gz --timeout 120
 	# Only lib/ is taken: the archive also carries include/, and the headers the
 	# build uses are the checked-in libs/include from the same ggml tag.
 	remove $ROOT/target/ggml-libs
