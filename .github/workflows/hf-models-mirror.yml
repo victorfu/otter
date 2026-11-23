@@ -1,0 +1,33 @@
+# Copy Breeze ASR 25, unchanged, from shdennlin/breeze-asr-25-ggml into the otter-app
+# Hugging Face organization (upload-hf-models in the root chorefile). Run it by hand;
+# a rerun uploads the same verified bytes, which the Hub dedupes.
+#   gh workflow run hf-models-mirror.yml
+# HF_TOKEN is a fine-grained token with write access to the otter-app organization.
+name: Hugging Face models mirror
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - uses: getchore/setup-chore@v1
+        with:
+          version: v1.6.0
+
+      - name: Install the Hugging Face CLI
+        run: pipx install huggingface_hub==2.4.0
+
+      - name: Mirror and upload
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          # The chorefile reads `rustc --print host-tuple` on load; the runner's stable
+          # toolchain answers it without installing the version rust-toolchain.toml pins.
+          RUSTUP_TOOLCHAIN: stable
+        run: chore upload-hf-models
