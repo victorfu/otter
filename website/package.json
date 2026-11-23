@@ -7,7 +7,7 @@
 	"scripts": {
 		"dev": "vite",
 		"test": "vitest run",
-		"i18n:generate": "paraglide-js compile --project ./project.inlang --outdir ./src/paraglide --emit-ts-declarations --strategy localStorage preferredLanguage baseLocale",
+		"i18n:generate": "paraglide-js compile --project ./project.inlang --outdir ./src/paraglide --emit-ts-declarations --strategy localStorage custom-language preferredLanguage baseLocale",
 		"build": "pnpm i18n:generate && tsc && vite build && node -e \"require('node:fs').copyFileSync('dist/index.html','dist/404.html')\"",
 		"preview": "vite preview"
 	},

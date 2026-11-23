@@ -3,6 +3,9 @@ import { Check, Languages } from 'lucide-react'
 import { m } from '../paraglide/messages.js'
 import type { Locale } from '../paraglide/runtime.js'
 
+/** Names `Intl.DisplayNames` gets too vague for: it calls zh-TW just "中文（台灣）". */
+const LABELS: Partial<Record<Locale, string>> = { 'zh-TW': '繁體中文（台灣）' }
+
 interface LanguageSelectorProps {
 	locale: Locale
 	availableLocales: readonly Locale[]
@@ -54,7 +57,7 @@ export default function LanguageSelector({ locale, availableLocales, onLocaleCha
 							className={`flex w-full items-center justify-between gap-4 whitespace-nowrap rounded-lg px-3 py-2 text-start text-sm transition-colors hover:bg-accent hover:text-foreground ${
 								code === locale ? 'text-foreground' : 'text-muted-foreground'
 							}`}>
-							<span>{languageNames.of(code) ?? code}</span>
+							<span>{LABELS[code] ?? languageNames.of(code) ?? code}</span>
 							{code === locale && <Check aria-hidden="true" className="size-3.5 text-foreground" />}
 						</button>
 					))}

@@ -13,7 +13,6 @@ export default function Layout() {
 	const [locale, setCurrentLocale] = useState<Locale>(getLocale())
 	const direction = getTextDirection(locale)
 	const availableLocales = supportedWebsiteLocales as readonly Locale[]
-	const onOpenSupport = useCallback(() => { window.location.assign('https://github.com/victorfu/otter') }, [])
 	const onOpenPrivacyPolicy = useCallback(() => setPrivacyOpen(true), [])
 	const onLocaleChange = useCallback((nextLocale: Locale) => {
 		setLocale(nextLocale, { reload: false })
@@ -22,13 +21,13 @@ export default function Layout() {
 
 	useEffect(() => {
 		document.documentElement.setAttribute('dir', direction)
+		document.documentElement.lang = locale
 		document.body.setAttribute('dir', direction)
-	}, [direction])
+	}, [direction, locale])
 
 	useScrollToTop()
 
 	useUrlActions({
-		'support-otter': onOpenSupport,
 		'open-privacy-policy': onOpenPrivacyPolicy,
 	})
 
@@ -36,9 +35,9 @@ export default function Layout() {
 		<div dir={direction} className="flex min-h-dvh flex-col bg-background text-foreground">
 			<Nav locale={locale} availableLocales={availableLocales} onLocaleChange={onLocaleChange} />
 			<main className="flex-1">
-				<Outlet context={{ onOpenSupport }} />
+				<Outlet />
 			</main>
-			<Footer onOpenSupport={onOpenSupport} onOpenPrivacyPolicy={onOpenPrivacyPolicy} />
+			<Footer onOpenPrivacyPolicy={onOpenPrivacyPolicy} />
 			<PrivacyPolicy open={privacyOpen} onOpenChange={setPrivacyOpen} />
 		</div>
 	)
