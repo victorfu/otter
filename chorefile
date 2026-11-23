@@ -110,6 +110,7 @@ task setup target=$rust_host {
 }
 
 # Mirror the pinned upstream FFmpeg archives, unchanged, into the $ffmpeg_tag release.
+# CI runs it from .github/workflows/ffmpeg-mirror.yml.
 task upload-ffmpeg {
     stage=target/ffmpeg-mirror
     remove $stage
