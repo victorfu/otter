@@ -23,7 +23,7 @@ describe('download deep links', () => {
 	})
 
 	it('treats a mirror as its catalog model', () => {
-		const result = parse('otter://download/?url=https://github.com/thewh1teagle/vibe/releases/download/model-files-v1.0/ggml-large-v3-turbo.bin')
+		const result = parse('otter://download/?url=https://github.com/victorfu/otter/releases/download/models-r1/ggml-large-v3-turbo.bin')
 		expect(result.kind === 'catalog' && result.model.id).toBe('whisper-large-v3-turbo')
 	})
 

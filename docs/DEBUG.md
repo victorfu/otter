@@ -68,7 +68,7 @@ macOS: `$HOME/Library/Application Support/cc.otter`
 
 Windows: `%appdata%\cc.otter`
 
-Linux: `~/.config/github.com/thewh1teagle.otter`
+Linux: `~/.config/cc.otter`
 
 </details>
 
