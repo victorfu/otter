@@ -28,10 +28,10 @@ export interface ModelDownload extends ModelIntegrity {
 	url: string
 }
 
+/** ONNX diarization files from before the Nemotron model. Nothing downloads or reads them any more;
+ * they are named only so a copy left in the models folder is never listed as a model. */
 export const embeddingModelFilename = 'wespeaker_en_voxceleb_CAM++.onnx'
 export const segmentModelFilename = 'segmentation-3.0.onnx'
-export const embeddingModelUrl = 'https://github.com/thewh1teagle/vibe/releases/download/v0.0.1/wespeaker_en_voxceleb_CAM++.onnx'
-export const segmentModelUrl = 'https://github.com/thewh1teagle/vibe/releases/download/v0.0.1/segmentation-3.0.onnx'
 
 /**
  * The download address, size and hash of this file and of `vadModelFilename` live in the `helperModels`
@@ -41,7 +41,7 @@ export const segmentModelUrl = 'https://github.com/thewh1teagle/vibe/releases/do
  * the HF safetensors by `server/crates/nemotron-diarize-rs/scripts/export.py --dtype q8_0`.
  * Q8_0 matches F32 segments on our checks at a quarter of the size.
  *
- * Mirrored into the otter-app org from `nvidia/Nemotron-3-Diarization` (OpenMDW 1.1).
+ * Published to the vibe-app Hugging Face org from `nvidia/Nemotron-3-Diarization` (OpenMDW 1.1).
  *
  * Anyone upgrading has speaker recognition on with this file missing: the transcription queue
  * runs the same download gate as the switch before the run. The models they had before stay
