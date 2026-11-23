@@ -63,8 +63,9 @@ fn tray_icon(_app: &AppHandle) -> Result<tauri::image::Image<'static>> {
 
 #[cfg(not(target_os = "linux"))]
 fn tray_icon(app: &AppHandle) -> Result<tauri::image::Image<'static>> {
+    // The default icon borrows from the app; to_owned copies it out as an Image<'static>.
     app.default_window_icon()
-        .cloned()
+        .map(|icon| icon.clone().to_owned())
         .ok_or_else(|| eyre!("the app has no icon to put in the tray"))
 }
 
