@@ -4,9 +4,11 @@ The master is a black mark on a transparent background, which disappears on a da
 GNOME dock and on Ubuntu's top bar (dark in both themes). Linux therefore gets:
 
 - app icons: the mark on a light rounded plate, legible on light and dark docks;
-- a tray icon: the mark in white, for the always-dark top bar.
+- a tray icon: the mark in white, for the always-dark top bar. macOS uses it too, as a
+  template image (only the alpha counts there).
 
-macOS and Windows keep the plain mark; tauri.linux.conf.json points Linux at these.
+macOS and Windows keep the plain mark for the app icon; tauri.linux.conf.json points Linux
+at these.
 """
 
 from pathlib import Path
@@ -61,4 +63,4 @@ tray = Image.new("RGBA", (work, work), (255, 255, 255, 0))
 tray.putalpha(place(mark, work, 0.94))
 white = Image.new("RGBA", (work, work), (255, 255, 255, 255))
 white.putalpha(tray.getchannel("A"))
-white.resize((64, 64), LANCZOS).save(icons / "tray-linux.png")
+white.resize((64, 64), LANCZOS).save(icons / "tray.png")
