@@ -25,13 +25,13 @@ Otter is a desktop transcription app built with **Tauri** (Rust + TypeScript fro
 
 ### FFmpeg Helper
 
-- macOS and Windows builds also bundle `ffmpeg` from the server release archives
+- macOS and Windows builds also bundle `ffmpeg`, from upstream archives mirrored in this repository's `ffmpeg-r*` release
 - Otter passes its path to the server with `OTTER_SERVER_FFMPEG_PATH`
 
 ### Build Flow
 
 1. Otter CI runs `chore setup <target-triple>`
-2. It builds `otter-server` and stages the FFmpeg version pinned by `.server-version` on Windows and macOS
+2. It builds `otter-server` and stages the FFmpeg pinned (by tag and SHA-256) in the root `chorefile` on Windows and macOS
 3. Binaries placed in `desktop/src-tauri/binaries/`
 4. Tauri bundles `otter-server` and, where configured, `ffmpeg` into the final app
 

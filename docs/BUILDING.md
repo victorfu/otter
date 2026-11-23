@@ -34,7 +34,7 @@ chore dev      # fetch the sidecars, then run the app
 chore build    # fetch the sidecars, then build for production
 ```
 
-Both start with `chore setup`, which builds the local Otter engine and stages it in `desktop/src-tauri/binaries/`. Install libclang for Rust bindgen. Windows and macOS also extract FFmpeg from the distribution pinned by `.server-version`. The same steps by hand:
+Both start with `chore setup`, which builds the local Otter engine and stages it in `desktop/src-tauri/binaries/`. Install libclang for Rust bindgen. Windows and macOS also download FFmpeg from the `ffmpeg-r*` release of this repository, an unchanged, hash-pinned mirror of the upstream builds; `chore upload-ffmpeg` refreshes that mirror when the pins in the `chorefile` change. The same steps by hand:
 
 ```console
 chore setup

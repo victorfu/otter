@@ -14,9 +14,21 @@ require 1.6.0
 include website/website.chore
 include e2e/e2e.chore
 
-# The server release the app ships, a server-v* tag of this repository.
-server=$(read .server-version)
 bin=desktop/src-tauri/binaries
+# The GitHub repository that hosts Otter's prebuilt sidecar inputs as release assets.
+repo=victorfu/otter
+# FFmpeg ships inside the app and runs on every file a user opens. The upstream
+# archives are mirrored unchanged into this release (upload-ffmpeg), so each hash
+# below is also the one upstream publishes: osxexperts names its zips by version
+# (80 = 8.0), and the Windows build is gyan.dev's versioned release. A new FFmpeg
+# goes in a new tag, so the archives an older commit pins never change under it.
+ffmpeg_tag=ffmpeg-r1
+ffmpeg_darwin_arm64=ffmpeg80arm.zip
+ffmpeg_darwin_arm64_sum=0d4efcaf6a098430a708e0af694a84792938921fa126162787ae98c6151d7a95
+ffmpeg_darwin_x86_64=ffmpeg80intel.zip
+ffmpeg_darwin_x86_64_sum=2d24d22db78c87f394a5822867acd5c5dc5e762cd261a44bd26923f3a5af3e07
+ffmpeg_windows=ffmpeg-9.0.2-essentials_build.zip
+ffmpeg_windows_sum=60f467265b1e312373dbcd92200c2618a74850f98d3d078e94296bb3fa2047ba
 # Tauri's GStreamer plugin release, a tag of tauri-apps/tauri-gstreamer-plugin.
 gst_plugin=gst-plugin-tauri-v0.0.1
 
@@ -70,20 +82,46 @@ task setup target=$rust_host {
     exe=""
     if $1 contains windows { exe=.exe }
     if exists $bin/ffmpeg-$1$exe { return }
-    # Only FFmpeg is extracted from the pinned upstream distribution.
     if $1 == aarch64-apple-darwin {
-        asset=vibe-server-darwin-arm64-with-ffmpeg.tar.gz
+        asset=$ffmpeg_darwin_arm64
+        sum=$ffmpeg_darwin_arm64_sum
     } else if $1 == x86_64-apple-darwin {
-        asset=vibe-server-darwin-amd64-with-ffmpeg.tar.gz
+        asset=$ffmpeg_darwin_x86_64
+        sum=$ffmpeg_darwin_x86_64_sum
+    } else if $1 == x86_64-pc-windows-msvc {
+        asset=$ffmpeg_windows
+        sum=$ffmpeg_windows_sum
     } else {
-        asset=vibe-server-windows-amd64-with-ffmpeg.zip
+        fail "no FFmpeg is pinned for $1"
     }
-    mkdir target/sidecars
-    download gh://thewh1teagle/vibe/server-$server/$asset target/sidecars/$asset
-    extract target/sidecars/$asset $bin --member ffmpeg$exe --flatten
-    move $bin/ffmpeg$exe $bin/ffmpeg-$1$exe
+    stage=target/sidecars
+    remove $stage
+    mkdir $stage
+    download gh://$repo/$ffmpeg_tag/$asset $stage/$asset --timeout 180 --sha256 $sum
+    # The macOS zips hold ffmpeg at the root; gyan.dev's holds <name>/bin/ffmpeg.exe.
+    if $1 contains windows {
+        extract $stage/$asset $stage --member ffmpeg.exe --strip 2
+    } else {
+        extract $stage/$asset $stage --member ffmpeg
+    }
+    move $stage/ffmpeg$exe $bin/ffmpeg-$1$exe
     chmod 755 $bin/ffmpeg-$1$exe
-    remove target/sidecars/$asset
+    remove $stage
+}
+
+# Mirror the pinned upstream FFmpeg archives, unchanged, into the $ffmpeg_tag release.
+task upload-ffmpeg {
+    stage=target/ffmpeg-mirror
+    remove $stage
+    mkdir $stage
+    download https://www.osxexperts.net/$ffmpeg_darwin_arm64 $stage/$ffmpeg_darwin_arm64 --timeout 180 --sha256 $ffmpeg_darwin_arm64_sum
+    download https://www.osxexperts.net/$ffmpeg_darwin_x86_64 $stage/$ffmpeg_darwin_x86_64 --timeout 180 --sha256 $ffmpeg_darwin_x86_64_sum
+    download gh://GyanD/codexffmpeg/9.0.2/$ffmpeg_windows $stage/$ffmpeg_windows --timeout 180 --sha256 $ffmpeg_windows_sum
+    # A prerelease: the website ships whichever release is marked latest (docs/UPDATER.md).
+    try gh release create $ffmpeg_tag --repo $repo --prerelease --title "FFmpeg sidecars ($ffmpeg_tag)" --notes "Unchanged mirrors of the FFmpeg builds Otter bundles. macOS: FFmpeg 8.0 from https://www.osxexperts.net. Windows: FFmpeg 9.0.2 essentials from https://www.gyan.dev/ffmpeg/builds/ (GitHub mirror GyanD/codexffmpeg). SHA-256 digests are pinned in the chorefile and equal the ones upstream publishes."
+    gh release upload $ffmpeg_tag $stage/$ffmpeg_darwin_arm64 $stage/$ffmpeg_darwin_x86_64 $stage/$ffmpeg_windows --repo $repo --clobber
+    remove $stage
+    echo "uploaded FFmpeg archives to release $ffmpeg_tag"
 }
 
 # Fetch Tauri's GStreamer plugin for asset:// playback into the Linux packages: gst-plugin <triple>.
