@@ -1,6 +1,5 @@
 import { ReactNode, SetStateAction, createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
-import { platform } from '@tauri-apps/plugin-os'
 import * as config from '~/lib/config'
 import { DEFAULT_AUTO_EXPORT, type AutoExportSettings } from '~/lib/auto-export'
 import { CONFIG_KEYS } from '~/lib/config-keys'
@@ -206,7 +205,9 @@ export function PreferenceProvider({ children }: { children: ReactNode }) {
 	const [modelMetadata, setModelMetadata] = useState<ModelMetadata | null>(null)
 	const [modelDisplayNames, setModelDisplayNames] = usePersisted<Record<string, string>>(CONFIG_KEYS.modelDisplayNames, {})
 	const [skippedSetup, setSkippedSetup] = usePersisted<boolean>(CONFIG_KEYS.skippedSetup, false)
-	const [closeToTray, setCloseToTray] = usePersisted<boolean>(CONFIG_KEYS.closeToTray, ['windows', 'macos'].includes(platform()))
+	// On everywhere: Ubuntu ships the AppIndicator extension, and where no tray shows,
+	// launching the app again still brings the hidden window back (single instance).
+	const [closeToTray, setCloseToTray] = usePersisted<boolean>(CONFIG_KEYS.closeToTray, true)
 	// Off by default: holding a laptop awake around the clock is not something to opt someone into.
 	const [preventSleep, setPreventSleep] = usePersisted<boolean>(CONFIG_KEYS.preventSleep, false)
 	const [textAreaDirection, setTextAreaDirection] = usePersisted<Direction>(CONFIG_KEYS.textAreaDirection, 'ltr')
