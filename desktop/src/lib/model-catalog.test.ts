@@ -50,7 +50,7 @@ const parakeetHe = entry({
 	languages: ['he'],
 	tags: ['fast', 'dictation'],
 	minAppVersion: '3.0.22',
-	url: 'https://huggingface.co/vibe-app/parakeet-tdt-0.6b-v3-he-gguf/resolve/main/parakeet-tdt-0.6b-v3-he-q8_0.gguf?download=true',
+	url: 'https://huggingface.co/otter-app/parakeet-tdt-0.6b-v3-he-gguf/resolve/main/parakeet-tdt-0.6b-v3-he-q8_0.gguf?download=true',
 })
 const norwegian = entry({ id: 'nb-whisper-large', languages: ['no'], url: 'https://huggingface.co/NbAiLab/nb-whisper-large/resolve/main/ggml-model.bin' })
 

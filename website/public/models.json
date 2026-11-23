@@ -17,7 +17,6 @@
 			"license": "MIT",
 			"url": "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo.bin",
 			"mirrors": [
-				"https://huggingface.co/vibe-app/whisper-large-v3-turbo-gguf/resolve/main/ggml-large-v3-turbo.bin",
 				"https://github.com/victorfu/otter/releases/download/models-r1/ggml-large-v3-turbo.bin"
 			],
 			"size": 1624555275,
@@ -148,7 +147,7 @@
 				"url": "https://huggingface.co/thewh1teagle/zipformer2-66m-streaming-he"
 			},
 			"license": "CC-BY-4.0",
-			"url": "https://huggingface.co/vibe-app/zipformer2-66m-streaming-he-gguf/resolve/main/zipformer2-66m-streaming-he-q8_0.gguf",
+			"url": "https://huggingface.co/otter-app/zipformer2-66m-streaming-he-gguf/resolve/main/zipformer2-66m-streaming-he-q8_0.gguf",
 			"size": 75359456,
 			"sha256": "5af82236b6b9a26150f1425b23da84acf761441859228529250f29f13373bdf4",
 			"description": {
@@ -192,7 +191,7 @@
 				"url": "https://huggingface.co/thewh1teagle/parakeet-tdt-0.6b-v3-he"
 			},
 			"license": "CC-BY-4.0",
-			"url": "https://huggingface.co/vibe-app/parakeet-tdt-0.6b-v3-he-gguf/resolve/main/parakeet-tdt-0.6b-v3-he-q8_0.gguf",
+			"url": "https://huggingface.co/otter-app/parakeet-tdt-0.6b-v3-he-gguf/resolve/main/parakeet-tdt-0.6b-v3-he-q8_0.gguf",
 			"size": 758224288,
 			"sha256": "37a6787344617fd7402397cd7ec4dd4f4bda779cb3112ac571e7b3329194e8dd",
 			"minAppVersion": "0.1.0",
@@ -402,7 +401,7 @@
 				"url": "https://huggingface.co/neurlang/zipformer2-66m-streaming-sk"
 			},
 			"license": "CC-BY-4.0",
-			"url": "https://huggingface.co/vibe-app/zipformer2-66m-streaming-sk-gguf/resolve/main/zipformer2-66m-streaming-sk-q8_0.gguf",
+			"url": "https://huggingface.co/otter-app/zipformer2-66m-streaming-sk-gguf/resolve/main/zipformer2-66m-streaming-sk-q8_0.gguf",
 			"size": 75348032,
 			"sha256": "bebae65aabf5544a8f4b503e9b014b75a52c0b8d301078d8173bed442c104113",
 			"description": {
@@ -470,7 +469,7 @@
 				"url": "https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3"
 			},
 			"license": "CC-BY-4.0",
-			"url": "https://huggingface.co/vibe-app/parakeet-tdt-0.6b-v3-gguf/resolve/main/parakeet-tdt-0.6b-v3-Q4_K_M.gguf",
+			"url": "https://huggingface.co/otter-app/parakeet-tdt-0.6b-v3-gguf/resolve/main/parakeet-tdt-0.6b-v3-Q4_K_M.gguf",
 			"size": 485425536,
 			"sha256": "5c61c041314d87ef1ffc278f5fb1a8ea25cceb8ce6053f8b516bab7ba16d7508",
 			"minAppVersion": "0.1.0",
@@ -616,7 +615,7 @@
 				"url": "https://huggingface.co/nvidia/nemotron-3.5-asr-streaming-0.6b"
 			},
 			"license": "OpenMDW-1.1",
-			"url": "https://huggingface.co/vibe-app/nemotron-3.5-asr-streaming-0.6b-gguf/resolve/main/nemotron-3.5-asr-streaming-0.6b-Q4_K_M.gguf",
+			"url": "https://huggingface.co/otter-app/nemotron-3.5-asr-streaming-0.6b-gguf/resolve/main/nemotron-3.5-asr-streaming-0.6b-Q4_K_M.gguf",
 			"size": 495831520,
 			"sha256": "41c99fa5fb6f3d35f68e79adc3e755eca2232a8d921178bd647b71194792b8fd",
 			"minAppVersion": "0.1.0",
