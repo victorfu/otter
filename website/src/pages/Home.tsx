@@ -30,7 +30,7 @@ export default function Home() {
 		<>
 			<section className="site-container pt-16 pb-12 text-center md:pt-24 md:pb-16">
 				<p className="text-sm font-semibold text-primary">{m['hero-eyebrow']()}</p>
-				<h1 className="mx-auto mt-4 max-w-[20ch] text-[2.25rem] leading-[1.08] font-bold tracking-[-0.035em] text-foreground text-balance [word-break:keep-all] md:text-[3.5rem]">
+				<h1 className="mx-auto mt-4 max-w-[20ch] text-[2.25rem] leading-[1.08] font-bold tracking-[-0.035em] text-foreground text-balance cjk-keep-words md:text-[3.5rem]">
 					{m['hero-title']()}
 				</h1>
 				<p className="site-lead mx-auto mt-5 max-w-[46ch] text-balance">{m['hero-subtitle']()}</p>

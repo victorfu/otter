@@ -21,8 +21,9 @@ export default function Layout() {
 
 	useEffect(() => {
 		document.documentElement.setAttribute('dir', direction)
+		document.documentElement.lang = locale
 		document.body.setAttribute('dir', direction)
-	}, [direction])
+	}, [direction, locale])
 
 	useScrollToTop()
 

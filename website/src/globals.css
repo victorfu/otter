@@ -325,6 +325,15 @@
 
 @layer components {
 	/*
+	 * Chinese headlines break only at punctuation and spaces, never inside a word like 術語.
+	 * Chinese only: Japanese runs such as はその通りに書きます have no break opportunity and
+	 * would overflow a phone. Relies on <html lang>, which Layout sets from the locale.
+	 */
+	.cjk-keep-words:lang(zh) {
+		word-break: keep-all;
+	}
+
+	/*
 	 * Shell layout rhythm — shared container so every page lines up with the
 	 * nav and footer. `site-container` for content, `site-section` for vertical
 	 * rhythm between blocks.

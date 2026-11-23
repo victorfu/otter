@@ -2,12 +2,12 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './globals.css'
 import App from './App'
-import { defineCustomClientStrategy } from './paraglide/runtime.js'
-import { detectChineseLocale } from './lib/locale-detect'
+import { defineCustomClientStrategy, locales } from './paraglide/runtime.js'
+import { detectSiteLocale } from './lib/locale-detect'
 
 // Before the first render: the first getLocale() call fixes the page language.
-defineCustomClientStrategy('custom-chinese', {
-	getLocale: () => detectChineseLocale(navigator.languages ?? [navigator.language]),
+defineCustomClientStrategy('custom-language', {
+	getLocale: () => detectSiteLocale(navigator.languages ?? [navigator.language], locales),
 	setLocale: () => {},
 })
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { chineseLocaleFor, detectChineseLocale } from './locale-detect'
+import { chineseLocaleFor, detectSiteLocale, siteLocaleFor } from './locale-detect'
 
 describe('chineseLocaleFor', () => {
 	it.each([
@@ -21,10 +21,29 @@ describe('chineseLocaleFor', () => {
 	})
 })
 
-describe('detectChineseLocale', () => {
-	it('uses the first language that is Chinese only if it comes first', () => {
-		expect(detectChineseLocale(['zh-Hant-TW', 'en-US'])).toBe('zh-TW')
-		expect(detectChineseLocale(['en-US', 'zh-TW'])).toBeUndefined()
-		expect(detectChineseLocale([])).toBeUndefined()
+
+describe('siteLocaleFor', () => {
+	const site = ['en-US', 'fr-FR', 'ja-JP', 'pt-BR', 'es-MX', 'no-NO', 'he-IL', 'de-DE', 'zh-CN', 'zh-HK', 'zh-TW'] as const
+
+	it.each([
+		['fr-CA', 'fr-FR'],
+		['ja', 'ja-JP'],
+		['de-AT', 'de-DE'],
+		['pt-PT', 'pt-BR'],
+		['es-ES', 'es-MX'],
+		['nb-NO', 'no-NO'],
+		['nn', 'no-NO'],
+		['iw', 'he-IL'],
+		['en-GB', 'en-US'],
+		['zh-Hant', 'zh-TW'],
+	])('%s → %s', (tag, locale) => expect(siteLocaleFor(tag, site)).toBe(locale))
+
+	it('returns nothing for a language the site does not have', () => {
+		expect(siteLocaleFor('it-IT', site)).toBeUndefined()
+	})
+
+	it('only looks at the first browser language', () => {
+		expect(detectSiteLocale(['fr-CA', 'en-US'], site)).toBe('fr-FR')
+		expect(detectSiteLocale(['it-IT', 'fr-FR'], site)).toBeUndefined()
 	})
 })
