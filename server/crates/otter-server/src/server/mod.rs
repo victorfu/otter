@@ -18,8 +18,6 @@ use axum::Router;
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
 use tower_http::trace::TraceLayer;
-use utoipa::OpenApi;
-use utoipa_swagger_ui::SwaggerUi;
 use whisper_rs::ContextOptions;
 
 use crate::cli::AppConfig;
@@ -84,37 +82,6 @@ impl ServerState {
     }
 }
 
-#[derive(OpenApi)]
-#[openapi(
-    paths(
-        routes::health::health,
-        routes::health::ready,
-        routes::skill::skill,
-        routes::models::load_model,
-        routes::models::model_metadata,
-        routes::models::unload_model,
-        routes::models::list_models,
-        routes::transcriptions::transcriptions
-    ),
-    components(schemas(
-        HealthResponse,
-        ReadyResponse,
-        ModelLoadRequest,
-        ModelStatusResponse,
-        ModelMetadataRequest,
-        ModelMetadataResponse,
-        ErrorResponse,
-        ModelListResponse,
-        ModelInfo,
-        crate::engine::EngineCapabilities,
-        TextResponse,
-        format::VerboseJson,
-        format::VerboseSegment
-    )),
-    tags((name = "otter-server", description = "otter-server transcription server"))
-)]
-struct ApiDoc;
-
 pub async fn serve(
     host: String,
     port: u16,
@@ -138,7 +105,6 @@ pub async fn serve(
     let app = Router::new()
         .route("/health", get(routes::health::health))
         .route("/ready", get(routes::health::ready))
-        .route("/skill", get(routes::skill::skill))
         .route("/v1/models/load", post(routes::models::load_model))
         .route("/v1/models/metadata", post(routes::models::model_metadata))
         .route(
@@ -146,7 +112,6 @@ pub async fn serve(
             delete(routes::models::unload_model).get(routes::models::list_models),
         )
         .route("/v1/audio/transcriptions", post(routes::transcriptions::transcriptions))
-        .merge(SwaggerUi::new("/docs").url("/openapi.json", ApiDoc::openapi()))
         .layer(DefaultBodyLimit::max(MAX_UPLOAD_SIZE))
         .layer(TraceLayer::new_for_http())
         .with_state(state);
@@ -193,12 +158,12 @@ fn print_ready(addr: SocketAddr, config: AppConfig) -> anyhow::Result<()> {
     Ok(())
 }
 
-#[derive(Debug, Serialize, utoipa::ToSchema)]
+#[derive(Debug, Serialize)]
 pub(super) struct HealthResponse {
     status: &'static str,
 }
 
-#[derive(Debug, Serialize, utoipa::ToSchema)]
+#[derive(Debug, Serialize)]
 pub(super) struct ReadyResponse {
     status: &'static str,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -207,37 +172,37 @@ pub(super) struct ReadyResponse {
     message: Option<&'static str>,
 }
 
-#[derive(Debug, Deserialize, utoipa::ToSchema)]
+#[derive(Debug, Deserialize)]
 pub(super) struct ModelLoadRequest {
     path: String,
     gpu_device: Option<i32>,
     no_gpu: Option<bool>,
 }
 
-#[derive(Debug, Serialize, utoipa::ToSchema)]
+#[derive(Debug, Serialize)]
 pub(super) struct ModelStatusResponse {
     status: &'static str,
     model: String,
 }
 
-#[derive(Debug, Deserialize, utoipa::ToSchema)]
+#[derive(Debug, Deserialize)]
 pub(super) struct ModelMetadataRequest {
     path: String,
 }
 
-#[derive(Debug, Serialize, utoipa::ToSchema)]
+#[derive(Debug, Serialize)]
 pub(super) struct ModelMetadataResponse {
     format: &'static str,
     capabilities: crate::engine::EngineCapabilities,
 }
 
-#[derive(Debug, Serialize, utoipa::ToSchema)]
+#[derive(Debug, Serialize)]
 pub(super) struct ModelListResponse {
     object: &'static str,
     data: Vec<ModelInfo>,
 }
 
-#[derive(Debug, Serialize, utoipa::ToSchema)]
+#[derive(Debug, Serialize)]
 pub(super) struct ModelInfo {
     id: String,
     object: &'static str,
@@ -246,17 +211,17 @@ pub(super) struct ModelInfo {
     capabilities: crate::engine::EngineCapabilities,
 }
 
-#[derive(Debug, Serialize, utoipa::ToSchema)]
+#[derive(Debug, Serialize)]
 pub(super) struct TextResponse {
     text: String,
 }
 
-#[derive(Debug, Serialize, utoipa::ToSchema)]
+#[derive(Debug, Serialize)]
 pub(super) struct ErrorResponse {
     error: ErrorBody,
 }
 
-#[derive(Debug, Serialize, utoipa::ToSchema)]
+#[derive(Debug, Serialize)]
 pub(super) struct ErrorBody {
     code: &'static str,
     message: String,

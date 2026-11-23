@@ -1,5 +1,5 @@
 import { emitMockEvent, onMockEvent } from '../event-bus'
-import { APP_LOCAL_DATA, DOCUMENTS_FOLDER, HOME_FOLDER, virtualFs } from '../state'
+import { APP_LOCAL_DATA, DOCUMENTS_FOLDER, virtualFs } from '../state'
 import type { CommandHandlerMap } from '../types'
 
 let tempPathCounter = 0
@@ -150,16 +150,6 @@ export const mediaMiscHandlers: CommandHandlerMap = {
 
 	// Unique like the real one: several downloads in a row must not land on the same file.
 	get_temp_path: (args) => `${APP_LOCAL_DATA}/tmp-${(tempPathCounter += 1)}.${String(args?.ext ?? 'tmp')}`,
-
-	get_agent_paths: () => ({ server: `${APP_LOCAL_DATA}/server`, otter: `${APP_LOCAL_DATA}/otter` }),
-
-	// Mirrors the Rust command: `<home>/.claude|.codex/skills/otter/SKILL.md`, parents created.
-	install_agent_skill: (args) => {
-		const folder = String(args?.target ?? 'claude') === 'codex' ? '.codex' : '.claude'
-		const path = `${HOME_FOLDER}/${folder}/skills/otter/SKILL.md`
-		virtualFs.set(path, String(args?.contents ?? ''))
-		return path
-	},
 
 	// --- yt-dlp -----------------------------------------------------------------
 

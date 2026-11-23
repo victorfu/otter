@@ -2,7 +2,7 @@
  * Every setting Otter persists, as one flat, human-readable key.
  *
  * The values are the field names inside `app_config.json`: the file is meant to be read and edited
- * by hand (and by agents), so the names describe the setting rather than the code that reads it.
+ * by hand, so the names describe the setting rather than the code that reads it.
  * Never rename a released key without adding a migration — see `lib/migrations`.
  */
 export const CONFIG_KEYS = {
@@ -84,10 +84,6 @@ export const CONFIG_KEYS = {
 	// Pre-3.2 shape, read once to migrate and then left alone.
 	legacyLlmConfig: 'summarize.llm',
 	legacyAutoSummarizeOnFinish: 'summarize.autoOnFinish',
-
-	// Local API. Written by the app while the server runs so agents can find the per-run port;
-	// removed on stop and on exit. Not a user setting.
-	apiBaseUrl: 'api.baseUrl',
 
 	// Tools
 	ytDlpVersion: 'tools.ytDlpVersion',

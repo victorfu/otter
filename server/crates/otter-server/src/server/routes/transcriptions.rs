@@ -24,16 +24,6 @@ const LIMITS: Limits = Limits {
     field: MAX_FIELD_SIZE,
 };
 
-#[utoipa::path(
-    post,
-    path = "/v1/audio/transcriptions",
-    responses(
-        (status = 200, description = "Transcription result"),
-        (status = 400, description = "Invalid request/audio", body = crate::server::ErrorResponse),
-        (status = 429, description = "Busy", body = crate::server::ErrorResponse),
-        (status = 503, description = "No model loaded", body = crate::server::ErrorResponse)
-    )
-)]
 pub(in crate::server) async fn transcriptions(State(state): State<AppState>, multipart: Multipart) -> Response {
     // The upload is read before the model is taken: a slow upload must not hold the lock
     // and turn every other request away as busy while the bytes trickle in.

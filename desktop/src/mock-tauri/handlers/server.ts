@@ -79,9 +79,6 @@ const MOCK_LANGUAGES = [
 	'mk',
 ]
 
-// Module level state, reset only by the mock itself.
-let apiBaseUrl: string | null = null
-
 function fileExists(path: unknown): boolean {
 	return typeof path === 'string' && virtualFs.has(path)
 }
@@ -241,18 +238,6 @@ export const serverHandlers: CommandHandlerMap = {
 	},
 
 	get_gpu_devices: () => [{ index: 0, name: 'Mock GPU (Apple M-series)', description: 'mock', type: 'integrated' }],
-
-	get_api_base_url: () => apiBaseUrl,
-
-	start_api_server: () => {
-		apiBaseUrl = 'http://127.0.0.1:33333'
-		return apiBaseUrl
-	},
-
-	stop_api_server: () => {
-		apiBaseUrl = null
-		return true
-	},
 
 	is_avx2_enabled: () => true,
 

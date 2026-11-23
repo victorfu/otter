@@ -12,7 +12,6 @@ import {
 	ShieldCheck,
 	SlidersHorizontal,
 	Sparkles,
-	Terminal,
 	Wrench,
 } from 'lucide-react'
 import { openUrl } from '@tauri-apps/plugin-opener'
@@ -22,7 +21,6 @@ import { viewModel } from './view-model'
 import { Button } from '~/components/ui/button'
 import { AdvancedSection } from './sections/advanced'
 import { AutoExportSection } from './sections/auto-export'
-import { ApiSection } from './sections/api'
 import { DictationSection } from './sections/dictation'
 import { GeneralSection } from './sections/general'
 import { ModelCatalogSection } from './sections/model-catalog'
@@ -41,7 +39,7 @@ interface SettingsPageProps {
 	scrollTo?: string
 }
 
-type SectionId = 'general' | 'transcription' | 'models' | 'ai' | 'tuning' | 'recording' | 'dictation' | 'api' | 'privacy' | 'advanced'
+type SectionId = 'general' | 'transcription' | 'models' | 'ai' | 'tuning' | 'recording' | 'dictation' | 'privacy' | 'advanced'
 
 type Subpage = 'model-catalog' | 'auto-export' | 'ai-summary' | 'ai-dictation' | 'whisper-options' | 'audio-processing'
 
@@ -71,7 +69,6 @@ export default function SettingsPage({ setVisible, scrollTo }: SettingsPageProps
 		{ label: m.settingsAppGroup(), sections: [
 			{ id: 'general', label: m.general(), icon: <Globe /> },
 			{ id: 'privacy', label: m.privacy(), icon: <ShieldCheck /> },
-			{ id: 'api', label: m.navAgents(), icon: <Terminal /> },
 			{ id: 'advanced', label: m.advanced(), icon: <Wrench /> },
 		] },
 	]
@@ -187,8 +184,6 @@ export default function SettingsPage({ setVisible, scrollTo }: SettingsPageProps
 						{!subpage && activeSection === 'recording' && <RecordingSection />}
 
 						{!subpage && activeSection === 'dictation' && <DictationSection vm={vm} onOpenCleanup={() => openSubpage('ai-dictation')} />}
-
-						{!subpage && activeSection === 'api' && <ApiSection vm={vm} />}
 
 						{!subpage && activeSection === 'privacy' && <PrivacySection vm={vm} />}
 

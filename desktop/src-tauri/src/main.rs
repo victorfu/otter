@@ -108,8 +108,6 @@ async fn main() -> Result<()> {
             cmd::app::get_cargo_features,
             cmd::config::write_config_atomically,
             cmd::config::get_config_path,
-            cmd::skill::install_agent_skill,
-            cmd::skill::get_agent_paths,
             setup::window_chrome,
             tray::set_tray,
             cmd::transcribe::transcribe,
@@ -121,9 +119,6 @@ async fn main() -> Result<()> {
             cmd::server_cmd::load_model,
             cmd::server_cmd::get_gpu_devices,
             cmd::server_cmd::get_model_metadata,
-            cmd::server_cmd::get_api_base_url,
-            cmd::server_cmd::start_api_server,
-            cmd::server_cmd::stop_api_server,
             cmd::app::get_commit_hash,
             cmd::app::is_avx2_enabled,
             cmd::app::is_online,
@@ -197,8 +192,6 @@ async fn main() -> Result<()> {
             }
         }
         tauri::RunEvent::ExitRequested { .. } | tauri::RunEvent::Exit => {
-            // A base URL left in the config file would point an agent at a dead port.
-            cmd::config::set_api_base_url(app, None).log_error();
             let mutex = app.state::<tokio::sync::Mutex<setup::ServerState>>();
             if let Ok(mut guard) = mutex.try_lock() {
                 if let Some(ref mut process) = guard.process {

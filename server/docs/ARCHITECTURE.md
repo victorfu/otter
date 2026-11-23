@@ -115,11 +115,6 @@ Transcription:
     - `prompt`
     - `enhance_audio`
 
-Documentation endpoints:
-
-- `/docs`
-- `/openapi.json`
-
 ---
 
 ## Transcription Execution Flow 🧠

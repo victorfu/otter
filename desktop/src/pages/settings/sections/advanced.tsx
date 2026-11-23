@@ -1,4 +1,5 @@
 import { useContext } from 'react'
+import { FileJson } from 'lucide-react'
 import { m } from '~/paraglide/messages.js'
 import { UpdaterContext, devToolsEnabled } from '~/providers/updater'
 import { Switch } from '~/components/ui/switch'
@@ -65,6 +66,7 @@ export function AdvancedSection({ vm }: { vm: SettingsViewModel }) {
 				<ActionRow label={m.copyLogs()} icon={<CopyIcon className="h-4 w-4" />} onClick={vm.copyLogs} />
 				<ActionRow label={m.logsFolder()} icon={<FolderIcon className="h-4 w-4" />} onClick={vm.revealLogs} />
 				<ActionRow label={m.tempFolder()} icon={<FolderIcon className="h-4 w-4" />} onClick={vm.revealTemp} />
+				<ActionRow label={m.configFile()} icon={<FileJson className="h-4 w-4" />} onClick={vm.revealConfigFile} />
 			</SettingsGroup>
 
 			<SettingsGroup>

@@ -55,13 +55,13 @@ pub fn format_vtt(segments: &[Segment]) -> String {
     out
 }
 
-#[derive(Debug, Serialize, utoipa::ToSchema)]
+#[derive(Debug, Serialize)]
 pub struct VerboseJson {
     pub text: String,
     pub segments: Vec<VerboseSegment>,
 }
 
-#[derive(Debug, Serialize, utoipa::ToSchema)]
+#[derive(Debug, Serialize)]
 pub struct VerboseSegment {
     pub start: f64,
     pub end: f64,
@@ -76,7 +76,7 @@ pub struct VerboseSegment {
 
 /// One word of a segment. Times are seconds, like the segment's; the text keeps
 /// its leading space, so joining a segment's words rebuilds its text.
-#[derive(Debug, Serialize, utoipa::ToSchema)]
+#[derive(Debug, Serialize)]
 pub struct VerboseWord {
     pub start: f64,
     pub end: f64,

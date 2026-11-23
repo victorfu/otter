@@ -5,8 +5,8 @@ import * as config from '~/lib/config'
 
 /**
  * Settings live in `app_config.json` next to the app's other data, not in `localStorage`: the file
- * survives a cleared webview, every window sees the same values, and a person (or an agent) can
- * open it and edit it.
+ * survives a cleared webview, every window sees the same values, and a person can open it and edit
+ * it.
  *
  * Reads have to be synchronous for React, so the whole file is pulled into a cache once at boot and
  * kept fresh by the store's change events — which also cover writes from another window.

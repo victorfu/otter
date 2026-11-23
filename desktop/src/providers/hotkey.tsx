@@ -20,7 +20,7 @@ import * as config from '~/lib/config'
 // when hotkey-triggered recording finishes
 export let hotkeyRecordingActive = false
 
-// Lives in lib/config so modules without a React dependency (the agent skill) can read the default.
+// Lives in lib/config so modules without a React dependency can read the default.
 export const getDefaultHotkeyShortcut = config.getDefaultHotkeyShortcut
 
 export type HotkeyOutputMode = 'clipboard' | 'type'

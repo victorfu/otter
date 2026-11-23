@@ -367,7 +367,6 @@ async fn download(app: &AppHandle, watched: bool) -> Result<(), String> {
 
 /// The transcription server is replaced by the update; Windows cannot overwrite it while it runs.
 async fn stop_server(app: &AppHandle) {
-    crate::cmd::config::set_api_base_url(app, None).ok();
     let state = app.state::<Mutex<crate::setup::ServerState>>();
     let mut guard = state.lock().await;
     if let Some(mut process) = guard.process.take() {

@@ -7,7 +7,7 @@ use crate::taiwan;
 /// Centiseconds per encoder frame of the Parakeet and Nemotron FastConformers (80 ms).
 const FRAME_CS: i64 = 8;
 
-#[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
+#[derive(Debug, Clone, Serialize)]
 pub struct EngineCapabilities {
     pub engine: String,
     pub requires_vad: bool,

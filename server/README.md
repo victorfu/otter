@@ -91,11 +91,6 @@ This means:
 - You don’t need custom client code
 - Switching between local (otter-server) and remote (OpenAI) is trivial
 
-See the full API reference here:
-
-- API docs: /docs
-- OpenAPI spec: /openapi.json
-
 ---
 
 ## Notes & Limitations
@@ -120,6 +115,4 @@ otter-server is a good fit if you want:
 
 ## Documentation 📚
 
-- API reference: /docs
-- OpenAPI schema: /openapi.json
 - Releases: https://github.com/victorfu/otter/releases?q=server-v

@@ -1,7 +1,6 @@
 // Shared fake state for the browser-mode Tauri mock.
 // All paths are virtual POSIX-style paths under /mock.
 
-export const HOME_FOLDER = '/mock/home'
 export const MODELS_FOLDER = '/mock/models'
 export const DOCUMENTS_FOLDER = '/mock/documents'
 export const DOWNLOADS_FOLDER = '/mock/downloads'

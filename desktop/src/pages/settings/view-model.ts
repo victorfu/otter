@@ -21,7 +21,6 @@ import { load } from '@tauri-apps/plugin-store'
 import { useStoreValue } from '~/lib/use-store-value'
 import { collectLogs, getPrettyVersion, getVersionNumber } from '~/lib/logs'
 import { cleanupPartialDownloads, isModelFileUsable, listInstalledModels, type InstalledModel, type ModelMetadata } from '~/lib/model'
-import { buildSkill, installSkill, type SkillTarget } from '~/lib/skill'
 
 export interface GpuDevice {
 	index: number
@@ -109,9 +108,6 @@ export function viewModel() {
 	const preference = usePreferenceProvider()
 	const listenersRef = useRef<UnlistenFn[]>([])
 	const [downloadURL, setDownloadURL] = useState('')
-	const [apiBaseUrl, setApiBaseUrl] = useState<string | null>(null)
-	const [isStartingApiServer, setIsStartingApiServer] = useState(false)
-	const [isStoppingApiServer, setIsStoppingApiServer] = useState(false)
 	const [gpuDevices, setGpuDevices] = useState<GpuDevice[]>([])
 	const isMacOS = platform() === 'macos'
 	const navigate = useNavigate()
@@ -278,7 +274,6 @@ export function viewModel() {
 
 	async function onWindowFocus() {
 		listenersRef.current.push(await listen('tauri://focus', loadModels))
-		listenersRef.current.push(await listen('tauri://focus', refreshApiServerStatus))
 	}
 
 	async function loadGpuDevices() {
@@ -291,52 +286,7 @@ export function viewModel() {
 		}
 	}
 
-	async function refreshApiServerStatus() {
-		try {
-			const baseUrl = await invoke<string | null>('get_api_base_url')
-			setApiBaseUrl(baseUrl)
-		} catch (error) {
-			console.error(error)
-			setApiBaseUrl(null)
-		}
-	}
-
-	async function startApiServer() {
-		try {
-			setIsStartingApiServer(true)
-			const baseUrl = await invoke<string>('start_api_server', { unloadTimeoutMinutes: preference.unloadTimeoutMinutes })
-			setApiBaseUrl(baseUrl)
-		} catch (error) {
-			console.error(error)
-		} finally {
-			setIsStartingApiServer(false)
-		}
-	}
-
-	async function copyAgentSkill() {
-		if (!apiBaseUrl) return
-		try {
-			await clipboard.writeText(await buildSkill(apiBaseUrl))
-			toast.success(m.agentInstructionsCopied())
-		} catch (error) {
-			console.error(error)
-			toast.error(m.localApiUnreachable())
-		}
-	}
-
-	/** Write the same skill to disk, so every future agent session has it instead of one pasted chat. */
-	async function installAgentSkill(target: SkillTarget) {
-		if (!apiBaseUrl) return
-		try {
-			const path = await installSkill(target, apiBaseUrl)
-			toast.success(m.agentSkillInstalled({ path }))
-		} catch (error) {
-			console.error('failed to install the agent skill:', error)
-			toast.error(String(error))
-		}
-	}
-
-	/** Show the settings file in the file manager, so it can be opened, edited or handed to an agent. */
+	/** Show the settings file in the file manager, so it can be opened and edited. */
 	async function revealConfigFile() {
 		try {
 			const path = await invoke<string>('get_config_path')
@@ -347,24 +297,11 @@ export function viewModel() {
 		}
 	}
 
-	async function stopApiServer() {
-		try {
-			setIsStoppingApiServer(true)
-			await invoke<boolean>('stop_api_server')
-			setApiBaseUrl(null)
-		} catch (error) {
-			console.error(error)
-		} finally {
-			setIsStoppingApiServer(false)
-		}
-	}
-
 	useEffect(() => {
 		loadMeta()
 		// Unresumable leftovers from an interrupted download only take up space.
 		cleanupPartialDownloads().then(loadModels).catch(console.error)
 		getDefaultModel()
-		refreshApiServerStatus()
 		loadGpuDevices()
 		onWindowFocus()
 		invoke<string>('get_default_projects_path').then(setDefaultProjectsPath).catch(console.error)
@@ -399,14 +336,6 @@ export function viewModel() {
 		downloadModel,
 		downloadURL,
 		setDownloadURL,
-		apiBaseUrl,
-		isStartingApiServer,
-		isStoppingApiServer,
-		startApiServer,
-		stopApiServer,
-		refreshApiServerStatus,
-		copyAgentSkill,
-		installAgentSkill,
 		revealConfigFile,
 		preference: preference,
 		askAndReset,
