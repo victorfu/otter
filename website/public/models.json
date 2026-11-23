@@ -662,7 +662,7 @@
 		{
 			"id": "diarize",
 			"filename": "nemotron-3-diarization-Q8_0.gguf",
-			"url": "https://huggingface.co/vibe-app/nemotron-3-diarization-gguf/resolve/main/nemotron-3-diarization-Q8_0.gguf",
+			"url": "https://github.com/victorfu/otter/releases/download/models-r1/nemotron-3-diarization-Q8_0.gguf",
 			"size": 108541632,
 			"sha256": "a25f026847d765c8661fd5095c73a0e5f20d310dcb8249c654e3828592a2fc73"
 		}
