@@ -4,7 +4,6 @@ import { Copy, Download, Languages, Layers, Pause, Plus, Search, Settings, Shiel
 import { requestDownload } from '~/lib/download-intent'
 import { m } from '../paraglide/messages.js'
 import Cta from '~/components/Cta'
-import WallOfLove from '~/components/WallOfLove'
 import { Button } from '~/components/ui/button'
 
 interface LayoutContext {
@@ -251,8 +250,6 @@ export default function Home() {
 					))}
 				</div>
 			</section>
-
-			<WallOfLove />
 
 			{/* Closing band */}
 			<section className="mt-20 lg:mt-28">

@@ -2,7 +2,7 @@
 name = "otter"
 version = "0.1.0"
 description = "Otter"
-authors = ["@thewh1teagle"]
+authors = ["Victor Fu"]
 license = "MIT"
 repository = "https://github.com/victorfu/otter"
 edition = "2021"

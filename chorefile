@@ -36,6 +36,10 @@ models_tag=models-r1
 diarize_model=nemotron-3-diarization-Q8_0.gguf
 diarize_model_source=https://huggingface.co/vibe-app/nemotron-3-diarization-gguf/resolve/main/$diarize_model
 diarize_model_sum=a25f026847d765c8661fd5095c73a0e5f20d310dcb8249c654e3828592a2fc73
+# The GitHub-hosted mirror of the default Whisper model, beside its Hugging Face addresses.
+turbo_model=ggml-large-v3-turbo.bin
+turbo_model_source=https://huggingface.co/ggerganov/whisper.cpp/resolve/main/$turbo_model
+turbo_model_sum=1fc70f774d38eb169993ac391eea357ef47c88757ef72ee5943879b7e8e2bc69
 # Tauri's GStreamer plugin release, a tag of tauri-apps/tauri-gstreamer-plugin.
 gst_plugin=gst-plugin-tauri-v0.0.1
 
@@ -139,9 +143,13 @@ task upload-models {
     remove $stage
     mkdir $stage
     download $diarize_model_source $stage/$diarize_model --timeout 600 --sha256 $diarize_model_sum
+    download $turbo_model_source $stage/$turbo_model --timeout 1800 --sha256 $turbo_model_sum
     # A prerelease: the website ships whichever release is marked latest (docs/UPDATER.md).
-    try gh release create $models_tag --repo $repo --prerelease --title "Runtime models ($models_tag)" --notes "Unchanged copies of model files the Otter app downloads on demand. SHA-256 digests are pinned in the chorefile and website/public/models.json. $diarize_model: NVIDIA Nemotron-3-Diarization (https://huggingface.co/nvidia/Nemotron-3-Diarization), licensed under OpenMDW 1.1, converted to GGUF Q8_0 by server/crates/nemotron-diarize-rs/scripts/export.py and first published at $diarize_model_source."
-    gh release upload $models_tag $stage/$diarize_model --repo $repo --clobber
+    notes="Unchanged copies of model files the Otter app downloads on demand. SHA-256 digests are pinned in the chorefile and website/public/models.json. $diarize_model: NVIDIA Nemotron-3-Diarization (https://huggingface.co/nvidia/Nemotron-3-Diarization), licensed under OpenMDW 1.1, converted to GGUF Q8_0 by server/crates/nemotron-diarize-rs/scripts/export.py and first published at $diarize_model_source. $turbo_model: OpenAI Whisper large-v3-turbo (MIT) in whisper.cpp GGML format, from $turbo_model_source."
+    try gh release create $models_tag --repo $repo --prerelease --title "Runtime models ($models_tag)" --notes "$notes"
+    # The release may predate a file added here; keep its notes describing every asset.
+    gh release edit $models_tag --repo $repo --notes "$notes"
+    gh release upload $models_tag $stage/$diarize_model $stage/$turbo_model --repo $repo --clobber
     remove $stage
     echo "uploaded runtime models to release $models_tag"
 }
