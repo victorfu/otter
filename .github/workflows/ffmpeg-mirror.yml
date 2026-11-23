@@ -16,6 +16,14 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.1
 
+      # www.osxexperts.net publishes an AAAA record, runners have no IPv6 route, and the
+      # download fails with "Network unreachable" instead of falling back to IPv4.
+      # With IPv6 off, the resolver returns only the A record.
+      - name: Prefer IPv4
+        run: |
+          sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1 net.ipv6.conf.default.disable_ipv6=1
+          curl -4 -sSfI https://www.osxexperts.net/ffmpeg80arm.zip | head -1
+
       - uses: getchore/setup-chore@v1
         with:
           version: v1.6.0
