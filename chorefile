@@ -154,39 +154,6 @@ task upload-models {
     echo "uploaded runtime models to release $models_tag"
 }
 
-# Copy Breeze ASR 25 (q8_0 whisper.cpp GGML), unchanged, from shdennlin/breeze-asr-25-ggml into
-# otter-app on Hugging Face. CI runs it from .github/workflows/hf-models-mirror.yml; it needs `hf`
-# and HF_TOKEN. The hash is the one website/public/models.json pins, so keep the two in step.
-task upload-hf-models {
-    name=breeze-asr-25-ggml
-    file=ggml-breeze-asr-25-q8_0.bin
-    sum=d4b187c40ffbf1f620734b77821e2ca8a97c8ecf5754d02b2a175069348cafcf
-    source=shdennlin/breeze-asr-25-ggml
-    base=MediaTek-Research/Breeze-ASR-25
-    stage=target/hf-mirror/$name
-    remove $stage
-    mkdir $stage
-    download https://huggingface.co/$source/resolve/main/$file $stage/$file --timeout 1800 --sha256 $sum
-    card=$stage/README.md
-    write $card "---"
-    echo "license: apache-2.0" >> $card
-    echo "base_model: $base" >> $card
-    echo "library_name: ggml" >> $card
-    echo "tags: [automatic-speech-recognition, whisper, ggml, otter]" >> $card
-    echo "---" >> $card
-    echo "" >> $card
-    echo "# $name" >> $card
-    echo "" >> $card
-    echo "The whisper.cpp GGML model file the [Otter](https://github.com/$repo) app downloads on demand." >> $card
-    echo "" >> $card
-    echo "An unchanged copy of [$source](https://huggingface.co/$source), converted from [$base](https://huggingface.co/$base) and quantized to q8_0. Review the upstream model card and its license before use." >> $card
-    echo "" >> $card
-    echo "SHA-256 of $file: $sum" >> $card
-    hf upload otter-app/$name $stage . --repo-type model --commit-message "Mirror $file from $source"
-    remove $stage
-    echo "uploaded $file to huggingface.co/otter-app/$name"
-}
-
 # Fetch Tauri's GStreamer plugin for asset:// playback into the Linux packages: gst-plugin <triple>.
 task gst-plugin target=$rust_host {
     # WebKitGTK plays media through GStreamer, which cannot read the asset:// URLs the

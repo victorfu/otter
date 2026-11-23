@@ -43,7 +43,8 @@
 				"tr-TR": "Çok yönlü model: yaklaşık 100 dilde doğru sonuç verir.",
 				"vi-VN": "Mô hình đa năng: chính xác với khoảng 100 ngôn ngữ.",
 				"zh-CN": "全能型：支持约 100 种语言，准确率高。",
-				"zh-HK": "全能之選：支援約 100 種語言，準確度高。"
+				"zh-HK": "全能之選：支援約 100 種語言，準確度高。",
+				"zh-TW": "全能型：支援約 100 種語言，準確度高。"
 			}
 		},
 		{
@@ -86,7 +87,8 @@
 				"tr-TR": "Küçük ve hızlı indirilir, ama daha az doğrudur.",
 				"vi-VN": "Rất nhỏ nên tải nhanh, nhưng kém chính xác hơn.",
 				"zh-CN": "体积小、下载快，但准确率较低。",
-				"zh-HK": "體積細、下載快，但準確度較低。"
+				"zh-HK": "體積細、下載快，但準確度較低。",
+				"zh-TW": "體積小、下載快，但準確度較低。"
 			}
 		},
 		{
@@ -129,7 +131,8 @@
 				"tr-TR": "İbranice için en doğru seçenek.",
 				"vi-VN": "Lựa chọn chính xác nhất cho tiếng Do Thái.",
 				"zh-CN": "希伯来语准确率最高的选择。",
-				"zh-HK": "希伯來語最準確的選擇。"
+				"zh-HK": "希伯來語最準確的選擇。",
+				"zh-TW": "希伯來語最準確的選擇。"
 			}
 		},
 		{
@@ -172,7 +175,8 @@
 				"tr-TR": "Küçük ve çok hızlı; yalnızca İbranice ses için en iyisi.",
 				"vi-VN": "Nhỏ và rất nhanh; tốt nhất cho âm thanh chỉ có tiếng Do Thái.",
 				"zh-CN": "体积小、速度极快；最适合纯希伯来语音频。",
-				"zh-HK": "體積細、速度極快，最適合純希伯來語音頻。"
+				"zh-HK": "體積細、速度極快，最適合純希伯來語音頻。",
+				"zh-TW": "體積小、速度極快，最適合純希伯來語音訊。"
 			},
 			"minAppVersion": "0.1.0"
 		},
@@ -217,7 +221,8 @@
 				"tr-TR": "Hızlı İbranice modeli, dikte için çok uygun.",
 				"vi-VN": "Mô hình tiếng Do Thái nhanh, rất phù hợp để đọc chính tả.",
 				"zh-CN": "速度快的希伯来语模型，非常适合听写。",
-				"zh-HK": "快速的希伯來語模型，適合語音輸入。"
+				"zh-HK": "快速的希伯來語模型，適合語音輸入。",
+				"zh-TW": "快速的希伯來語模型，適合語音輸入。"
 			}
 		},
 		{
@@ -260,7 +265,8 @@
 				"tr-TR": "Norveççe konuşmayla eğitildi; Norveççe için en doğru model.",
 				"vi-VN": "Được huấn luyện trên giọng nói tiếng Na Uy; chính xác nhất cho tiếng Na Uy.",
 				"zh-CN": "基于挪威语语音训练；挪威语准确率最高。",
-				"zh-HK": "以挪威語語音訓練；挪威語最準確。"
+				"zh-HK": "以挪威語語音訓練；挪威語最準確。",
+				"zh-TW": "以挪威語語音訓練，挪威語最準確。"
 			}
 		},
 		{
@@ -300,7 +306,8 @@
 				"tr-TR": "Daha küçük bir Norveççe model: daha hızlı, biraz daha az doğru.",
 				"vi-VN": "Mô hình tiếng Na Uy nhỏ hơn: nhanh hơn, kém chính xác một chút.",
 				"zh-CN": "较小的挪威语模型：速度更快，准确率略低。",
-				"zh-HK": "較小的挪威語模型：更快，準確度稍低。"
+				"zh-HK": "較小的挪威語模型：更快，準確度稍低。",
+				"zh-TW": "較小的挪威語模型：速度較快，準確度稍低。"
 			}
 		},
 		{
@@ -343,7 +350,8 @@
 				"tr-TR": "İsveççe konuşmayla eğitildi; İsveççe için en doğru model.",
 				"vi-VN": "Được huấn luyện trên giọng nói tiếng Thụy Điển; chính xác nhất cho tiếng Thụy Điển.",
 				"zh-CN": "基于瑞典语语音训练；瑞典语准确率最高。",
-				"zh-HK": "以瑞典語語音訓練；瑞典語最準確。"
+				"zh-HK": "以瑞典語語音訓練；瑞典語最準確。",
+				"zh-TW": "以瑞典語語音訓練，瑞典語最準確。"
 			}
 		},
 		{
@@ -383,7 +391,51 @@
 				"tr-TR": "Daha küçük bir İsveççe model: daha hızlı, biraz daha az doğru.",
 				"vi-VN": "Mô hình tiếng Thụy Điển nhỏ hơn: nhanh hơn, kém chính xác một chút.",
 				"zh-CN": "较小的瑞典语模型：速度更快，准确率略低。",
-				"zh-HK": "較小的瑞典語模型：更快，準確度稍低。"
+				"zh-HK": "較小的瑞典語模型：更快，準確度稍低。",
+				"zh-TW": "較小的瑞典語模型：速度較快，準確度稍低。"
+			}
+		},
+		{
+			"id": "breeze-asr-25",
+			"name": "Breeze ASR 25",
+			"languages": [
+				"zh"
+			],
+			"tags": [
+				"accurate"
+			],
+			"publisher": {
+				"name": "MediaTek Research",
+				"url": "https://huggingface.co/MediaTek-Research/Breeze-ASR-25"
+			},
+			"license": "Apache-2.0",
+			"url": "https://huggingface.co/otter-app/breeze-asr-25-ggml/resolve/main/ggml-breeze-asr-25-q8_0.bin",
+			"size": 1656129691,
+			"sha256": "d4b187c40ffbf1f620734b77821e2ca8a97c8ecf5754d02b2a175069348cafcf",
+			"description": {
+				"en-US": "Tuned for Taiwanese Mandarin and Mandarin–English mixing. Writes Traditional Chinese.",
+				"bg-BG": "Настроен за тайвански мандарин и смесване на мандарин с английски. Пише с традиционни китайски йероглифи.",
+				"ca-AD": "Ajustat per al mandarí de Taiwan i la barreja de mandarí i anglès. Escriu en xinès tradicional.",
+				"cs-CZ": "Vyladěný pro tchajwanskou mandarínštinu a míchání mandarínštiny s angličtinou. Píše tradiční čínštinou.",
+				"de-DE": "Abgestimmt auf taiwanisches Mandarin und Mandarin-Englisch-Mischungen. Schreibt traditionelles Chinesisch.",
+				"es-ES": "Ajustado para el mandarín de Taiwán y la mezcla de mandarín e inglés. Escribe en chino tradicional.",
+				"es-MX": "Ajustado para el mandarín de Taiwán y la mezcla de mandarín e inglés. Escribe en chino tradicional.",
+				"fr-FR": "Adapté au mandarin de Taïwan et au mélange mandarin-anglais. Écrit en chinois traditionnel.",
+				"he-IL": "מותאם למנדרינית טייוואנית ולשילוב של מנדרינית ואנגלית. כותב בסינית מסורתית.",
+				"hi-IN": "ताइवानी मंदारिन और मंदारिन-अंग्रेज़ी मिश्रण के लिए अनुकूलित। पारंपरिक चीनी में लिखता है।",
+				"it-IT": "Ottimizzato per il mandarino di Taiwan e il mix di mandarino e inglese. Scrive in cinese tradizionale.",
+				"ja-JP": "台湾華語と中国語・英語の混在に最適化。繁体字で出力します。",
+				"ko-KR": "대만 표준중국어와 중국어·영어 혼용에 맞춰 조정되었습니다. 번체자로 출력합니다.",
+				"no-NO": "Tilpasset taiwansk mandarin og blanding av mandarin og engelsk. Skriver tradisjonell kinesisk.",
+				"pl-PL": "Dostrojony do tajwańskiego mandaryńskiego i mieszania mandaryńskiego z angielskim. Zapisuje w chińskim tradycyjnym.",
+				"pt-BR": "Ajustado para o mandarim de Taiwan e a mistura de mandarim com inglês. Escreve em chinês tradicional.",
+				"ru-RU": "Настроен на тайваньский мандаринский и смешанную китайско-английскую речь. Пишет традиционными иероглифами.",
+				"sv-SE": "Anpassad för taiwanesisk mandarin och blandning av mandarin och engelska. Skriver traditionell kinesiska.",
+				"tr-TR": "Tayvan Mandarincesi ve Mandarin–İngilizce karışık konuşma için ayarlandı. Geleneksel Çince yazar.",
+				"vi-VN": "Tinh chỉnh cho tiếng Quan Thoại Đài Loan và lời nói trộn Quan Thoại – tiếng Anh. Xuất ra chữ Hán phồn thể.",
+				"zh-CN": "针对台湾华语及中英混说优化，输出繁体中文。",
+				"zh-HK": "針對台灣華語及中英夾雜優化，輸出繁體中文。",
+				"zh-TW": "針對台灣華語與中英夾雜優化，輸出繁體中文。"
 			}
 		},
 		{
@@ -426,7 +478,8 @@
 				"tr-TR": "Küçük ve çok hızlı; yalnızca Slovakça ses için en iyisi.",
 				"vi-VN": "Nhỏ và rất nhanh; tốt nhất cho âm thanh chỉ có tiếng Slovak.",
 				"zh-CN": "体积小、速度极快；最适合纯斯洛伐克语音频。",
-				"zh-HK": "體積細、速度極快，最適合純斯洛伐克語音頻。"
+				"zh-HK": "體積細、速度極快，最適合純斯洛伐克語音頻。",
+				"zh-TW": "體積小、速度極快，最適合純斯洛伐克語音訊。"
 			},
 			"minAppVersion": "0.1.0"
 		},
@@ -495,7 +548,8 @@
 				"tr-TR": "Çok hızlı, 25 Avrupa dili için.",
 				"vi-VN": "Rất nhanh, dành cho 25 ngôn ngữ châu Âu.",
 				"zh-CN": "速度极快，支持 25 种欧洲语言。",
-				"zh-HK": "速度極快，支援 25 種歐洲語言。"
+				"zh-HK": "速度極快，支援 25 種歐洲語言。",
+				"zh-TW": "速度極快，支援 25 種歐洲語言。"
 			}
 		},
 		{
@@ -563,7 +617,8 @@
 				"tr-TR": "25 Avrupa dili için Parakeet v3'ün ince ayarlı sürümü.",
 				"vi-VN": "Bản tinh chỉnh của Parakeet v3 cho 25 ngôn ngữ châu Âu.",
 				"zh-CN": "Parakeet v3 的微调版本，支持 25 种欧洲语言。",
-				"zh-HK": "Parakeet v3 的微調版本，支援 25 種歐洲語言。"
+				"zh-HK": "Parakeet v3 的微調版本，支援 25 種歐洲語言。",
+				"zh-TW": "Parakeet v3 的微調版本，支援 25 種歐洲語言。"
 			}
 		},
 		{
@@ -641,13 +696,15 @@
 				"tr-TR": "35 dil için akışlı model; dikte için iyi.",
 				"vi-VN": "Mô hình streaming cho 35 ngôn ngữ; phù hợp để đọc chính tả.",
 				"zh-CN": "支持 35 种语言的流式模型；适合听写。",
-				"zh-HK": "支援 35 種語言的串流模型；適合語音輸入。"
+				"zh-HK": "支援 35 種語言的串流模型；適合語音輸入。",
+				"zh-TW": "支援 35 種語言的串流模型，適合語音輸入。"
 			}
 		}
 	],
 	"defaults": {
 		"he": "whisper-large-v3-turbo-he",
 		"IL": "whisper-large-v3-turbo-he",
+		"TW": "breeze-asr-25",
 		"*": "whisper-large-v3-turbo"
 	},
 	"helperModels": [
