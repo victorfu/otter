@@ -25,6 +25,8 @@ use tauri::Emitter;
 #[cfg(target_os = "macos")]
 mod dock;
 #[cfg(target_os = "macos")]
+mod native_window;
+#[cfg(target_os = "macos")]
 mod system_audio;
 
 #[cfg(windows)]
