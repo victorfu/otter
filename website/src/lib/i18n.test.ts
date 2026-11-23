@@ -5,6 +5,8 @@ describe('website i18n', () => {
 	it('derives website locales from the central registry', () => {
 		expect(supportedWebsiteLocales).toContain('en-US')
 		expect(supportedWebsiteLocales).toContain('he-IL')
+		expect(supportedWebsiteLocales).toContain('zh-TW')
+		expect(supportedWebsiteLocales).toHaveLength(16)
 	})
 
 	it('falls back safely when a message is missing', () => {

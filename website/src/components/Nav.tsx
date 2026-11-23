@@ -51,9 +51,7 @@ export default function Nav({ locale, availableLocales, onLocaleChange }: NavPro
 							<Moon className="hidden size-4 dark:block" />
 						</button>
 					)}
-					{import.meta.env.DEV && (
-						<LanguageSelector locale={locale} availableLocales={availableLocales} onLocaleChange={onLocaleChange} showDevBadge />
-					)}
+					<LanguageSelector locale={locale} availableLocales={availableLocales} onLocaleChange={onLocaleChange} />
 					<li>
 						<Button size="sm" asChild>
 							<a href="#download" onClick={onDownloadClick}>

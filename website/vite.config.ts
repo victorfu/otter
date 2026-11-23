@@ -37,7 +37,7 @@ export default defineConfig({
 			project: './project.inlang',
 			outdir: './src/paraglide',
 			emitTsDeclarations: true,
-			strategy: ['localStorage', 'preferredLanguage', 'baseLocale'],
+			strategy: ['localStorage', 'custom-chinese', 'preferredLanguage', 'baseLocale'],
 		}),
 		react(),
 		tailwindcss(),
