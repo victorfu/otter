@@ -137,6 +137,22 @@ describe('language choice', () => {
 		expect(defaultCatalogLanguage('norwegian', 'en-US', all)).toBe('no')
 	})
 
+	it('starts on the regional variant when the UI locale names a region the catalog has', () => {
+		const chinese = entry({ id: 'nemotron', languages: ['zh'], url: 'https://example.com/nemotron.gguf' })
+		const breeze = entry({ id: 'breeze', languages: ['zh-tw'], url: 'https://example.com/breeze.bin' })
+		const withTaiwan = models(turbo, chinese, breeze)
+		expect(withTaiwan.find((model) => model.id === 'breeze')?.languages).toEqual(['zh-TW'])
+		expect(catalogLanguages(withTaiwan)).toEqual(['zh', 'zh-TW'])
+		// The bare language beside its own region is for older apps; this one keeps only the region.
+		expect(models(entry({ languages: ['zh', 'zh-TW'] }))[0].languages).toEqual(['zh-TW'])
+		expect(defaultCatalogLanguage('auto', 'zh-TW', withTaiwan)).toBe('zh-TW')
+		expect(defaultCatalogLanguage('auto', 'zh-Hant-TW', withTaiwan)).toBe('zh-TW')
+		expect(defaultCatalogLanguage('zh', 'zh-TW', withTaiwan)).toBe('zh-TW')
+		expect(defaultCatalogLanguage('auto', 'zh-CN', withTaiwan)).toBe('zh')
+		// A Chinese transcription on an English UI has no region to go by.
+		expect(defaultCatalogLanguage('zh', 'en-TW', withTaiwan)).toBe('zh')
+	})
+
 	it('falls back to the multilingual group for a language without its own model', () => {
 		expect(defaultCatalogLanguage('fr', 'he-IL', all)).toBe('*')
 		expect(defaultCatalogLanguage('auto', 'en-US', all)).toBe('*')
@@ -167,6 +183,19 @@ describe('groupForLanguage', () => {
 
 	it('lifts the multilingual recommendation above everything when the language has none of its own', () => {
 		expect(view('en')).toEqual({ primary: ['whisper-large-v3-turbo', 'parakeet'], multilingual: ['whisper-tiny'], recommendedId: 'whisper-large-v3-turbo' })
+	})
+
+	it('lists a regional variant with its own models first, then the ones for the whole language', () => {
+		const chinese = entry({ id: 'nemotron', languages: ['zh'], tags: ['fast'], url: 'https://example.com/nemotron.gguf' })
+		const breeze = entry({ id: 'breeze', languages: ['zh-TW'], url: 'https://example.com/breeze.bin' })
+		const withTaiwan = models(tiny, turbo, chinese, breeze)
+		const ids = (list: CatalogModel[]) => list.map((model) => model.id)
+		const taiwan = groupForLanguage(withTaiwan, 'zh-TW')
+		expect(ids(taiwan.primary)).toEqual(['breeze', 'nemotron'])
+		expect(taiwan.recommendedId).toBe('breeze')
+		const chineseView = groupForLanguage(withTaiwan, 'zh')
+		expect(ids(chineseView.primary)).toEqual(['whisper-large-v3-turbo', 'nemotron'])
+		expect(chineseView.recommendedId).toBe('whisper-large-v3-turbo')
 	})
 
 	it('shows only the multilingual models for "any language", with no divider group', () => {

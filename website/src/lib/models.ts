@@ -11,7 +11,7 @@ export type Tag = (typeof tags)[number]
 export interface Model {
 	id: string
 	name: string
-	/** ISO 639-1 codes, or `['*']` for a multilingual model. */
+	/** ISO 639-1 codes, optionally with a region (`zh-TW`), or `['*']` for a multilingual model. */
 	languages: string[]
 	tags: Tag[]
 	publisher: { name: string; url: string }
@@ -35,8 +35,30 @@ export const models = catalog.models
 
 const isMultilingual = (model: Model) => model.languages.includes('*')
 
+/** `zh-tw` → `zh-TW`: lowercase language, uppercase region, as the catalog writes them. */
+function canonical(code: string) {
+	const [language, region] = code.split('-')
+	return region ? `${language.toLowerCase()}-${region.toUpperCase()}` : language.toLowerCase()
+}
+
+/** The models for a language: its own first, then, for a regional one (`zh-TW`), those for the language as a whole. */
+function modelsForLanguage(language: string) {
+	const base = language.split('-')[0]
+	const own = models.filter((model) => languagesOf(model).includes(language))
+	const general = base === language ? [] : models.filter((model) => !own.includes(model) && languagesOf(model).includes(base))
+	return [...own, ...general]
+}
+
+/**
+ * The languages a model is for. `["zh", "zh-TW"]` is a Chinese (Taiwan) model: the bare language is
+ * there for apps that predate regions, which drop `zh-TW` and would otherwise drop the whole model.
+ */
+export function languagesOf(model: Model) {
+	return model.languages.filter((code) => !model.languages.some((other) => other !== code && other.split('-')[0] === code))
+}
+
 /** Every language at least one model is made for, in no particular order. */
-export const catalogLanguages = [...new Set(models.flatMap((model) => model.languages.filter((code) => code !== '*')))]
+export const catalogLanguages = [...new Set(models.flatMap((model) => languagesOf(model).filter((code) => code !== '*')))]
 
 function recommendedFirst(list: Model[]) {
 	return [...list.filter((model) => model.tags.includes('recommended')), ...list.filter((model) => !model.tags.includes('recommended'))]
@@ -65,23 +87,26 @@ export function modelsFor(language: string): ModelGroups {
 		const top = multilingual.find((model) => model.tags.includes('recommended'))
 		return { top, first: multilingual, rest: models.filter((model) => !isMultilingual(model)), divider: 'specific' }
 	}
-	const specific = recommendedFirst(models.filter((model) => model.languages.includes(language)))
+	const specific = recommendedFirst(modelsForLanguage(language))
 	const top = [...specific, ...multilingual].find((model) => model.tags.includes('recommended'))
 	const others = (list: Model[]) => list.filter((model) => model !== top)
 	return { top, first: [...(top ? [top] : []), ...others(specific)], rest: others(multilingual), divider: 'every' }
 }
 
-/** The picker's starting point: the language the site is shown in when the catalog knows it. */
+/** The picker's starting point: the site's locale (`zh-TW`) or its language (`zh`) when the catalog knows it. */
 export function defaultLanguage(locale: string) {
+	const regional = canonical(locale)
+	if (catalogLanguages.includes(regional)) return regional
 	const language = locale.split('-')[0].toLowerCase()
 	return catalogLanguages.includes(language) ? language : ANY_LANGUAGE
 }
 
 /** Reads `?lang=`; anything the catalog has no models for is ignored. */
 export function languageFromParam(param: string | null) {
-	const wanted = param?.toLowerCase()
-	if (!wanted) return null
-	return wanted === ANY_LANGUAGE || catalogLanguages.includes(wanted) ? wanted : null
+	if (!param) return null
+	if (param.toLowerCase() === ANY_LANGUAGE) return ANY_LANGUAGE
+	const wanted = canonical(param)
+	return catalogLanguages.includes(wanted) ? wanted : null
 }
 
 /**

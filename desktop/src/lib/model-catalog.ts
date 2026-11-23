@@ -10,10 +10,29 @@ export const ANY_LANGUAGE = '*'
 
 const BASE_LOCALE = 'en-US'
 
+/** A catalog language: `*`, an ISO 639 code (`zh`), or one with a region (`zh-TW`). */
+const CATALOG_LANGUAGE = /^(\*|[a-z]{2,3}(-[a-z]{2})?)$/i
+
+/** `ZH-tw` → `zh-TW`: lowercase language, uppercase region, as BCP 47 writes them. */
+export function canonicalLanguage(code: string): string {
+	const [language, region] = code.trim().split('-')
+	return region ? `${language.toLowerCase()}-${region.toUpperCase()}` : language.toLowerCase()
+}
+
+/** `zh-TW` → `zh`. */
+function baseLanguage(code: string) {
+	return code.split('-')[0]
+}
+
+/** Made for the language, or, when it names a region, for the language as a whole: Chinese (Taiwan) also lists Chinese models. */
+function serves(model: CatalogModel, language: string) {
+	return model.languages.includes(language) || (language !== baseLanguage(language) && model.languages.includes(baseLanguage(language)))
+}
+
 export interface CatalogModel {
 	id: string
 	name: string
-	/** Lowercase ISO 639-1 codes, or `*` for a multilingual model. */
+	/** ISO 639-1 codes, optionally with a region (`zh-TW`), or `*` for a multilingual model. */
 	languages: string[]
 	tags: ModelTag[]
 	publisher: { name: string; url?: string }
@@ -95,9 +114,12 @@ function normalizeModel(value: unknown): CatalogModel | null {
 	const url = httpsUrl(value.url)
 	if (!id || !ID_PATTERN.test(id) || !name || !url || !getModelExtension(urlFilename(url))) return null
 
-	const languages = Array.isArray(value.languages)
-		? [...new Set(value.languages.filter((code): code is string => typeof code === 'string' && /^(\*|[a-z]{2,3})$/i.test(code.trim())).map((code) => code.trim().toLowerCase()))]
+	const listed = Array.isArray(value.languages)
+		? [...new Set(value.languages.filter((code): code is string => typeof code === 'string' && CATALOG_LANGUAGE.test(code.trim())).map((code) => canonicalLanguage(code)))]
 		: []
+	// `["zh", "zh-TW"]` is a Chinese (Taiwan) model: the bare language is there for apps that predate
+	// regions, which drop `zh-TW` and would otherwise drop the whole model.
+	const languages = listed.filter((code) => !listed.some((other) => other !== code && baseLanguage(other) === code))
 	if (languages.length === 0) return null
 
 	const publisher = isRecord(value.publisher) ? text(value.publisher.name) : undefined
@@ -245,10 +267,19 @@ export function catalogLanguages(models: CatalogModel[]): string[] {
 	return [...new Set(models.flatMap((model) => model.languages))].filter((code) => code !== ANY_LANGUAGE).sort()
 }
 
-/** The transcription language, or the UI language when that is `auto`; multilingual when it has no model of its own. */
+/**
+ * The transcription language, or the UI language when that is `auto`; multilingual when it has no
+ * model of its own. The UI locale's region narrows it when the catalog has that variant, so Chinese
+ * on a `zh-TW` (or `zh-Hant-TW`) system starts on Chinese (Taiwan).
+ */
 export function defaultCatalogLanguage(transcriptionLanguage: string | null | undefined, uiLocale: string, models: CatalogModel[]): string {
 	const wanted = toIsoLanguage(transcriptionLanguage) ?? toIsoLanguage(uiLocale)
-	return wanted && catalogLanguages(models).includes(wanted) ? wanted : ANY_LANGUAGE
+	if (!wanted) return ANY_LANGUAGE
+	const languages = catalogLanguages(models)
+	const region = toIsoLanguage(uiLocale) === wanted ? /[-_]([A-Za-z]{2})\b/.exec(uiLocale)?.[1] : undefined
+	const regional = region ? canonicalLanguage(`${wanted}-${region}`) : null
+	if (regional && languages.includes(regional)) return regional
+	return languages.includes(wanted) ? wanted : ANY_LANGUAGE
 }
 
 /** The file a catalog install is saved as. Many upstream files share the name `ggml-model.bin`, the id does not. */
@@ -278,7 +309,11 @@ export interface CatalogView {
 export function groupForLanguage(models: CatalogModel[], language: string): CatalogView {
 	const isRecommended = (model: CatalogModel) => model.tags.includes('recommended')
 	const everyLanguage = models.filter((model) => model.languages.includes(ANY_LANGUAGE))
-	const specific = language === ANY_LANGUAGE ? everyLanguage : models.filter((model) => model.languages.includes(language))
+	// A regional view lists the region's own models before the ones for the language as a whole.
+	const specific =
+		language === ANY_LANGUAGE
+			? everyLanguage
+			: [...models.filter((model) => model.languages.includes(language)), ...models.filter((model) => !model.languages.includes(language) && serves(model, language))]
 	const multilingual = everyLanguage.filter((model) => !specific.includes(model))
 	const recommended = specific.find(isRecommended) ?? multilingual.find(isRecommended) ?? null
 	return {

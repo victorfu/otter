@@ -57,10 +57,11 @@ function LanguagePicker({ value, onSelect, locale }: { value: string; onSelect: 
 	// then the rest by name. Typing: one flat list of matches.
 	const groups = useMemo<LanguageGroup[]>(() => {
 		if (needle) return [{ label: null, items: [any, ...options].filter((option) => matchesQuery(option, needle)) }]
-		const own = locale.split('-')[0].toLowerCase()
+		// The site's language and its regional variant (zh and zh-TW for a zh-TW reader).
+		const own = (code: string) => code === locale || code === locale.split('-')[0].toLowerCase()
 		return [
-			{ label: null, items: [any, ...options.filter((option) => option.code === own)] },
-			{ label: null, items: options.filter((option) => option.code !== own) },
+			{ label: null, items: [any, ...options.filter((option) => own(option.code))] },
+			{ label: null, items: options.filter((option) => !own(option.code)) },
 		]
 	}, [any, options, needle, locale])
 	const current = [any, ...options].find((option) => option.code === value) ?? any

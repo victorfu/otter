@@ -20,12 +20,9 @@ function languageName(code: string, locale: string) {
 	}
 }
 
-/**
- * Search terms a language's names miss. The catalog groups by ISO 639-1, so Taiwan's models sit
- * under Chinese, where "Taiwan" or "繁體" would otherwise find nothing.
- */
+/** Search terms a language's own names miss: "Chinese (Taiwan)" is also 臺灣, 華語 and 繁體 to its readers. */
 const EXTRA_KEYWORDS: Record<string, string[]> = {
-	zh: ['Taiwan', 'Mandarin', 'Traditional', '台灣', '臺灣', '華語', '國語', '繁體', '中文'],
+	'zh-TW': ['Mandarin', 'Traditional', '台灣', '臺灣', '華語', '國語', '繁體'],
 }
 
 /** The transcription-language control, over the languages the catalog has models for. */

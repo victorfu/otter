@@ -25,7 +25,7 @@ suite('models.json', () => {
 
 		expect(model.languages.length).toBeGreaterThan(0)
 		if (model.languages.includes('*')) expect(model.languages).toEqual(['*'])
-		else for (const code of model.languages) expect(code).toMatch(/^[a-z]{2}$/)
+		else for (const code of model.languages) expect(code).toMatch(/^[a-z]{2}(-[A-Z]{2})?$/)
 		expect(new Set(model.languages).size).toBe(model.languages.length)
 
 		for (const tag of model.tags) expect(tags).toContain(tag)
@@ -110,8 +110,16 @@ suite('grouping', () => {
 		expect(divider).toBe('specific')
 	})
 
+	it('lists Chinese (Taiwan) on its own: its models first, then the Chinese ones', () => {
+		const taiwan = modelsFor('zh-TW')
+		expect(taiwan.top?.id).toBe('breeze-asr-25')
+		expect(ids(taiwan.first)).toEqual(['breeze-asr-25', 'nemotron-3.5-asr-streaming-0.6b'])
+		expect(ids(modelsFor('zh').first)).not.toContain('breeze-asr-25')
+		expect(modelsFor('zh').top?.id).toBe('whisper-large-v3-turbo')
+	})
+
 	it('never shows a model twice', () => {
-		for (const language of ['he', 'en', 'sv', ANY_LANGUAGE]) {
+		for (const language of ['he', 'en', 'sv', 'zh', 'zh-TW', ANY_LANGUAGE]) {
 			const { first, rest } = modelsFor(language)
 			const shown = ids([...first, ...rest])
 			expect(new Set(shown).size).toBe(shown.length)
@@ -122,6 +130,9 @@ suite('grouping', () => {
 		expect(defaultLanguage('he-IL')).toBe('he')
 		expect(defaultLanguage('xx-XX')).toBe(ANY_LANGUAGE)
 		expect(languageFromParam('HE')).toBe('he')
+		expect(defaultLanguage('zh-TW')).toBe('zh-TW')
+		expect(defaultLanguage('zh-CN')).toBe('zh')
+		expect(languageFromParam('zh-tw')).toBe('zh-TW')
 		expect(languageFromParam('xx')).toBeNull()
 		expect(languageFromParam(null)).toBeNull()
 	})
