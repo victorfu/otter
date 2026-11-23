@@ -7,7 +7,7 @@ describe('changelog', () => {
 		expect(releases[0].date).toBe('2026-11-23')
 	})
 
-	it('finds nothing for an old Vibe version, so the page shows the unknown-version message', () => {
+	it('finds nothing for a version from before Otter 0.1.0, so the page shows the unknown-version message', () => {
 		expect(findRelease('3.3.8')).toBeUndefined()
 		expect(findRelease('v0.1.0')?.version).toBe('0.1.0')
 	})
