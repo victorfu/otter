@@ -6,6 +6,7 @@
 //! a second ball beside the first. The menu window keeps one size and is moved while hidden.
 
 use crate::config::STORE_FILENAME;
+use crate::main_thread::on_main_thread;
 use std::sync::Mutex;
 use tauri::{AppHandle, Emitter, LogicalSize, Manager, Monitor, PhysicalPosition, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
 use tauri_plugin_store::StoreExt;
@@ -65,27 +66,8 @@ fn work_area(monitor: &Monitor) -> Rect {
     }
 }
 
-/// Run `f` on the main thread and wait for its result; inline when already there.
-///
-/// Every monitor query goes through here. Tauri fetches a monitor on the main thread but turns it
-/// into a `Monitor` on the caller's thread, and on Linux that reads the work area from the X
-/// server. Async commands run on tokio workers, so two threads talked to Xlib at once and GTK
-/// aborted with BadImplementation the moment the ball was clicked.
-fn on_main_thread<T: Send + 'static>(
-    app: &AppHandle,
-    f: impl FnOnce(&AppHandle) -> Result<T, String> + Send + 'static,
-) -> Result<T, String> {
-    let (tx, rx) = std::sync::mpsc::channel();
-    let handle = app.clone();
-    app.run_on_main_thread(move || {
-        let _ = tx.send(f(&handle));
-    })
-    .map_err(|error| error.to_string())?;
-    rx.recv().map_err(|error| error.to_string())?
-}
-
 /// The monitor under the point, falling back to the window's own and then the primary one.
-/// Main thread only; see `on_main_thread`.
+/// Main thread only; see `crate::main_thread::on_main_thread`.
 fn monitor_at(window: &WebviewWindow, x: f64, y: f64) -> Result<Monitor, String> {
     window
         .monitor_from_point(x, y)

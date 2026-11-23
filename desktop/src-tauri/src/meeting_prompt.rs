@@ -243,6 +243,17 @@ fn show_window_without_focus(_app: &tauri::AppHandle, window: &WebviewWindow) ->
     window.show().map_err(|error| error.to_string())
 }
 
+/// Position the prompt on the monitor under the cursor and show it, on the main thread: detections
+/// arrive on the detector's own thread, and monitor queries there break Xlib on Linux (see
+/// `crate::main_thread::on_main_thread`). The window is built before this, off the main thread.
+fn place_and_show(app: &tauri::AppHandle, window: &WebviewWindow) -> Result<(), String> {
+    let window = window.clone();
+    crate::main_thread::on_main_thread(app, move |app| {
+        position_window(app, &window)?;
+        show_window_without_focus(app, &window)
+    })
+}
+
 fn hide_window(app: &tauri::AppHandle) {
     if let Some(window) = app.get_webview_window(WINDOW_LABEL) {
         let _ = window.hide();
@@ -258,8 +269,7 @@ fn show_state(app: &tauri::AppHandle, state: MeetingPromptPayload) -> Result<(),
         Some(window) => window,
         None => create_window(app)?,
     };
-    position_window(app, &window)?;
-    show_window_without_focus(app, &window)?;
+    place_and_show(app, &window)?;
     window.emit(EVENT_NAME, state).map_err(|error| error.to_string())
 }
 
@@ -403,8 +413,7 @@ pub fn meeting_prompt_ready(window: tauri::WebviewWindow) -> Result<(), String> 
     let app = window.app_handle();
     let state = get_meeting_prompt_state(app.clone())?;
     if let Some(state) = state {
-        position_window(app, &window)?;
-        show_window_without_focus(app, &window)?;
+        place_and_show(app, &window)?;
         window.emit(EVENT_NAME, state).map_err(|error| error.to_string())?;
     } else {
         window.hide().map_err(|error| error.to_string())?;

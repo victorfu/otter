@@ -12,6 +12,7 @@ mod ffmpeg;
 mod floating_dock;
 mod keepawake;
 mod logging;
+mod main_thread;
 mod meeting_prompt;
 mod mic_level;
 mod server;
