@@ -50,7 +50,8 @@ function AppContent() {
 		void invoke<{ material: boolean }>('window_chrome').then(chrome => {
 			if (!mounted) return
 			root.classList.toggle('native-material', chrome.material)
-			if (chrome.material) dispose = mountPopoverMaterial()
+			// TEMP A/B (do not commit): popover material off to test the language-menu lag.
+			if (chrome.material && false) dispose = mountPopoverMaterial()
 		}).catch(error => console.warn('Window appearance unavailable', error))
 		return () => {
 			mounted = false
