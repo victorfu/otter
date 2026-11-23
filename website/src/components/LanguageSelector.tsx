@@ -14,6 +14,14 @@ function nativeName(code: Locale) {
 	return LABELS[code] ?? new Intl.DisplayNames([code], { type: 'language' }).of(code) ?? code
 }
 
+/** English first, Traditional Chinese (Taiwan) second, then the other East Asian languages; the rest alphabetically. */
+const FIRST: readonly Locale[] = ['en-US', 'zh-TW', 'zh-HK', 'zh-CN', 'ja-JP', 'ko-KR']
+
+function byMenuOrder(a: { code: Locale; name: string }, b: { code: Locale; name: string }) {
+	const rank = (code: Locale) => (FIRST.includes(code) ? FIRST.indexOf(code) : FIRST.length)
+	return rank(a.code) - rank(b.code) || a.name.localeCompare(b.name)
+}
+
 interface LanguageSelectorProps {
 	locale: Locale
 	availableLocales: readonly Locale[]
@@ -25,7 +33,7 @@ interface LanguageSelectorProps {
 export default function LanguageSelector({ locale, availableLocales, onLocaleChange, showDevBadge = false }: LanguageSelectorProps) {
 	const [open, setOpen] = useState(false)
 	const menuRef = useRef<HTMLLIElement>(null)
-	const options = availableLocales.map((code) => ({ code, name: nativeName(code) })).sort((a, b) => a.name.localeCompare(b.name))
+	const options = availableLocales.map((code) => ({ code, name: nativeName(code) })).sort(byMenuOrder)
 
 	useEffect(() => {
 		function closeOnOutsideClick(event: MouseEvent) {
