@@ -54,14 +54,15 @@ fn hide_main_window(app: &AppHandle) {
     window.hide().map_err(|error| eyre!("{error:?}")).log_error();
 }
 
-/// Ubuntu's top bar is dark in both themes, and the app icon (a plate on Linux) reads as a
-/// blob at indicator size, so Linux gets the bare mark in white; see scripts/linux-icons.py.
-#[cfg(target_os = "linux")]
+/// The bare mark in white; see scripts/linux-icons.py. Ubuntu's top bar is dark in both themes,
+/// and the app icon (a plate on Linux) reads as a blob at indicator size. On macOS the same
+/// image goes in as a template: the menu bar uses only its alpha and tints it to match.
+#[cfg(any(target_os = "linux", target_os = "macos"))]
 fn tray_icon(_app: &AppHandle) -> Result<tauri::image::Image<'static>> {
-    Ok(tauri::image::Image::from_bytes(include_bytes!("../icons/tray-linux.png"))?)
+    Ok(tauri::image::Image::from_bytes(include_bytes!("../icons/tray.png"))?)
 }
 
-#[cfg(not(target_os = "linux"))]
+#[cfg(not(any(target_os = "linux", target_os = "macos")))]
 fn tray_icon(app: &AppHandle) -> Result<tauri::image::Image<'static>> {
     // The default icon borrows from the app; to_owned copies it out as an Image<'static>.
     app.default_window_icon()
@@ -106,6 +107,7 @@ pub fn apply(app: &AppHandle, enabled: bool, labels: TrayLabels) -> Result<()> {
     let icon = tray_icon(app)?;
     let tray = TrayIconBuilder::with_id("main")
         .icon(icon)
+        .icon_as_template(cfg!(target_os = "macos"))
         .tooltip("Otter")
         .menu(&menu)
         // macOS puts the menu on a left click; Windows and Linux expect it to open the window.

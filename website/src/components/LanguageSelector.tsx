@@ -3,8 +3,16 @@ import { Check, Languages } from 'lucide-react'
 import { m } from '../paraglide/messages.js'
 import type { Locale } from '../paraglide/runtime.js'
 
-/** Names `Intl.DisplayNames` gets too vague for: it calls zh-TW just "中文（台灣）". */
-const LABELS: Partial<Record<Locale, string>> = { 'zh-TW': '繁體中文（台灣）' }
+/** Chinese is named by script, which `Intl.DisplayNames` leaves out ("中文（台灣）"). */
+const LABELS: Partial<Record<Locale, string>> = { 'zh-CN': '简体中文（中国）', 'zh-HK': '繁體中文（香港）', 'zh-TW': '繁體中文（台灣）' }
+
+/**
+ * Each language in its own name ("Deutsch", "日本語"), as the app's picker does: the list reads the
+ * same on every page language, and a visitor finds theirs without reading the current one.
+ */
+function nativeName(code: Locale) {
+	return LABELS[code] ?? new Intl.DisplayNames([code], { type: 'language' }).of(code) ?? code
+}
 
 interface LanguageSelectorProps {
 	locale: Locale
@@ -17,7 +25,7 @@ interface LanguageSelectorProps {
 export default function LanguageSelector({ locale, availableLocales, onLocaleChange, showDevBadge = false }: LanguageSelectorProps) {
 	const [open, setOpen] = useState(false)
 	const menuRef = useRef<HTMLLIElement>(null)
-	const languageNames = new Intl.DisplayNames([locale], { type: 'language' })
+	const options = availableLocales.map((code) => ({ code, name: nativeName(code) })).sort((a, b) => a.name.localeCompare(b.name))
 
 	useEffect(() => {
 		function closeOnOutsideClick(event: MouseEvent) {
@@ -46,7 +54,7 @@ export default function LanguageSelector({ locale, availableLocales, onLocaleCha
 			</button>
 			{open && (
 				<div className="absolute top-full end-0 z-50 mt-2 min-w-52 rounded-xl border border-border bg-popover p-1.5 text-popover-foreground shadow-lg">
-					{availableLocales.map((code) => (
+					{options.map(({ code, name }) => (
 						<button
 							key={code}
 							type="button"
@@ -57,7 +65,7 @@ export default function LanguageSelector({ locale, availableLocales, onLocaleCha
 							className={`flex w-full items-center justify-between gap-4 whitespace-nowrap rounded-lg px-3 py-2 text-start text-sm transition-colors hover:bg-accent hover:text-foreground ${
 								code === locale ? 'text-foreground' : 'text-muted-foreground'
 							}`}>
-							<span>{LABELS[code] ?? languageNames.of(code) ?? code}</span>
+							<span lang={code}>{name}</span>
 							{code === locale && <Check aria-hidden="true" className="size-3.5 text-foreground" />}
 						</button>
 					))}
