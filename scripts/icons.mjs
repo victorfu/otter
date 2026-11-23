@@ -12,4 +12,6 @@ run("tauri", ["icon", master, "--output", native]);
 copyFileSync(path.join(native, "128x128.png"), path.join(app, "desktop", "public", "logo.png"));
 copyFileSync(path.join(native, "128x128.png"), path.join(app, "design", "taskbar.png"));
 copyFileSync(master, path.join(app, "website", "public", "logo.png"));
-run(process.platform === "win32" ? "python" : "python3", ["scripts/windows-icons.py"]);
+const python = process.platform === "win32" ? "python" : "python3";
+run(python, ["scripts/windows-icons.py"]);
+run(python, ["scripts/linux-icons.py"]);

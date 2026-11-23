@@ -54,6 +54,20 @@ fn hide_main_window(app: &AppHandle) {
     window.hide().map_err(|error| eyre!("{error:?}")).log_error();
 }
 
+/// Ubuntu's top bar is dark in both themes, and the app icon (a plate on Linux) reads as a
+/// blob at indicator size, so Linux gets the bare mark in white; see scripts/linux-icons.py.
+#[cfg(target_os = "linux")]
+fn tray_icon(_app: &AppHandle) -> Result<tauri::image::Image<'static>> {
+    Ok(tauri::image::Image::from_bytes(include_bytes!("../icons/tray-linux.png"))?)
+}
+
+#[cfg(not(target_os = "linux"))]
+fn tray_icon(app: &AppHandle) -> Result<tauri::image::Image<'static>> {
+    app.default_window_icon()
+        .cloned()
+        .ok_or_else(|| eyre!("the app has no icon to put in the tray"))
+}
+
 /// Build the tray when `enabled`, take it down when not. Safe to call repeatedly — the labels are
 /// re-applied on every call, which is how a language change reaches the menu.
 pub fn apply(app: &AppHandle, enabled: bool, labels: TrayLabels) -> Result<()> {
@@ -88,10 +102,7 @@ pub fn apply(app: &AppHandle, enabled: bool, labels: TrayLabels) -> Result<()> {
         return Ok(());
     }
 
-    let icon = app
-        .default_window_icon()
-        .cloned()
-        .ok_or_else(|| eyre!("the app has no icon to put in the tray"))?;
+    let icon = tray_icon(app)?;
     let tray = TrayIconBuilder::with_id("main")
         .icon(icon)
         .tooltip("Otter")
