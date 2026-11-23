@@ -15,9 +15,20 @@ process.env.PATH = [...new Set(paths)].join(path.delimiter)
 const localClang = path.join(root, 'target', 'otter-tools', 'bindgen', 'clang', 'native')
 if (!process.env.LIBCLANG_PATH && existsSync(localClang)) process.env.LIBCLANG_PATH = localClang
 
+const installHints = {
+  chore: 'Install it with: curl -fsSL https://getchore.github.io/chore/install.sh | sh (see docs/BUILDING.md)',
+  cargo: 'Install Rust from https://www.rust-lang.org/tools/install',
+}
+
 function run(command, args, cwd) {
   const result = spawnSync(command, args, { cwd, stdio: 'inherit' })
-  if (result.error) console.error(result.error.message)
+  if (result.error?.code === 'ENOENT') {
+    const name = path.basename(command, '.exe')
+    console.error(`otter: \`${name}\` was not found on PATH.`)
+    if (installHints[name]) console.error(installHints[name])
+  } else if (result.error) {
+    console.error(`otter: failed to run \`${command}\`: ${result.error.message}`)
+  }
   if (result.status !== 0) process.exit(result.status ?? 1)
 }
 
