@@ -71,5 +71,6 @@
 	"modelsTagRecommended": "Recommandé",
 	"modelsDetails": "Détails du modèle",
 	"modelsLicense": "Licence",
-	"modelsSize": "Taille"
+	"modelsSize": "Taille",
+	"footer-description": "La transcription vocale pour le travail clinique, sur votre propre ordinateur."
 }

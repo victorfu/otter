@@ -71,5 +71,6 @@
 	"modelsTagRecommended": "おすすめ",
 	"modelsDetails": "モデルの詳細",
 	"modelsLicense": "ライセンス",
-	"modelsSize": "サイズ"
+	"modelsSize": "サイズ",
+	"footer-description": "医療現場のための音声文字起こし。あなたのパソコン上で動きます。"
 }

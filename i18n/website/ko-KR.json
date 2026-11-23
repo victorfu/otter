@@ -71,5 +71,6 @@
 	"modelsTagRecommended": "권장",
 	"modelsDetails": "모델 상세 정보",
 	"modelsLicense": "라이선스",
-	"modelsSize": "크기"
+	"modelsSize": "크기",
+	"footer-description": "의료 업무를 위한 음성 텍스트 변환, 내 컴퓨터에서 실행됩니다."
 }

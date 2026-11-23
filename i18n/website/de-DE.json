@@ -71,5 +71,6 @@
 	"modelsTagRecommended": "Empfohlen",
 	"modelsDetails": "Modelldetails",
 	"modelsLicense": "Lizenz",
-	"modelsSize": "Größe"
+	"modelsSize": "Größe",
+	"footer-description": "Spracherkennung für die klinische Arbeit, auf Ihrem eigenen Computer."
 }

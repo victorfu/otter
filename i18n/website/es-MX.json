@@ -71,5 +71,6 @@
 	"modelsTagRecommended": "Recomendado",
 	"modelsDetails": "Detalles del modelo",
 	"modelsLicense": "Licencia",
-	"modelsSize": "Tamaño"
+	"modelsSize": "Tamaño",
+	"footer-description": "Voz a texto para el trabajo clínico, en tu propia computadora."
 }

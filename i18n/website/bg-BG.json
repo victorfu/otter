@@ -71,5 +71,6 @@
 	"modelsTagRecommended": "Препоръчан",
 	"modelsDetails": "Подробности за модела",
 	"modelsLicense": "Лиценз",
-	"modelsSize": "Размер"
+	"modelsSize": "Размер",
+	"footer-description": "Превръщане на реч в текст за клинична работа, на собствения ви компютър."
 }

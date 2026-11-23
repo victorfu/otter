@@ -71,5 +71,6 @@
 	"modelsTagRecommended": "推薦",
 	"modelsDetails": "模型詳情",
 	"modelsLicense": "授權",
-	"modelsSize": "大小"
+	"modelsSize": "大小",
+	"footer-description": "為醫療工作而設、在你電腦上運行的語音轉文字。"
 }

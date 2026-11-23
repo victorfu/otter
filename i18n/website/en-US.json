@@ -71,5 +71,6 @@
 	"modelsTagRecommended": "Recommended",
 	"modelsDetails": "Details",
 	"modelsLicense": "Licence",
-	"modelsSize": "Size"
+	"modelsSize": "Size",
+	"footer-description": "Speech to text for clinical work, on your own computer."
 }

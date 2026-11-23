@@ -28,7 +28,6 @@ export default function Layout() {
 	useScrollToTop()
 
 	useUrlActions({
-		'support-otter': onOpenSupport,
 		'open-privacy-policy': onOpenPrivacyPolicy,
 	})
 
@@ -38,7 +37,7 @@ export default function Layout() {
 			<main className="flex-1">
 				<Outlet context={{ onOpenSupport }} />
 			</main>
-			<Footer onOpenSupport={onOpenSupport} onOpenPrivacyPolicy={onOpenPrivacyPolicy} />
+			<Footer onOpenPrivacyPolicy={onOpenPrivacyPolicy} />
 			<PrivacyPolicy open={privacyOpen} onOpenChange={setPrivacyOpen} />
 		</div>
 	)

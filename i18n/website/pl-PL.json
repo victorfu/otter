@@ -71,5 +71,6 @@
 	"modelsTagRecommended": "Zalecany",
 	"modelsDetails": "Szczegóły modelu",
 	"modelsLicense": "Licencja",
-	"modelsSize": "Rozmiar"
+	"modelsSize": "Rozmiar",
+	"footer-description": "Zamiana mowy na tekst w pracy klinicznej, na Twoim własnym komputerze."
 }

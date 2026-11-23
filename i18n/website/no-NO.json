@@ -71,5 +71,6 @@
 	"modelsTagRecommended": "Anbefalt",
 	"modelsDetails": "Modelldetaljer",
 	"modelsLicense": "Lisens",
-	"modelsSize": "Størrelse"
+	"modelsSize": "Størrelse",
+	"footer-description": "Tale til tekst for klinisk arbeid, på din egen datamaskin."
 }

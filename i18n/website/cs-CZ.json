@@ -71,5 +71,6 @@
 	"modelsTagRecommended": "Doporučeno",
 	"modelsDetails": "Podrobnosti o modelu",
 	"modelsLicense": "Licence",
-	"modelsSize": "Velikost"
+	"modelsSize": "Velikost",
+	"footer-description": "Převod řeči na text pro klinickou práci, na vašem vlastním počítači."
 }

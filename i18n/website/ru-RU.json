@@ -71,5 +71,6 @@
 	"modelsTagRecommended": "Рекомендуется",
 	"modelsDetails": "Сведения о модели",
 	"modelsLicense": "Лицензия",
-	"modelsSize": "Размер"
+	"modelsSize": "Размер",
+	"footer-description": "Преобразование речи в текст для клинической работы — на вашем компьютере."
 }

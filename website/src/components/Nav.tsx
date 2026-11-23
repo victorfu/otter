@@ -1,11 +1,10 @@
 import { m } from '../paraglide/messages.js'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { Button } from '~/components/ui/button'
 import Logo from '~/icons/Logo'
+import { DOWNLOAD_URL } from '~/lib/links'
 import type { Locale } from '../paraglide/runtime.js'
 import LanguageSelector from './LanguageSelector'
-import { requestDownloadWhenReady } from '~/lib/download-intent'
-import { Moon, Sun } from 'lucide-react'
 
 interface NavProps {
 	locale: Locale
@@ -13,47 +12,30 @@ interface NavProps {
 	onLocaleChange: (locale: Locale) => void
 }
 
+const linkClass = 'rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground'
+
+/** The app's title bar, as a site header: glyph and wordmark, a few links, the language, Download. */
 export default function Nav({ locale, availableLocales, onLocaleChange }: NavProps) {
-	const navigate = useNavigate()
-	const location = useLocation()
-
-	function onDownloadClick(event: React.MouseEvent<HTMLAnchorElement>) {
-		event.preventDefault()
-		if (location.pathname !== '/') navigate('/')
-		requestDownloadWhenReady()
-	}
-
 	return (
-		<header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl">
-			<div className="site-container flex h-16 items-center gap-6">
-				<Link to="/" aria-label={m.home()} className="flex items-center gap-2.5 text-foreground transition-opacity hover:opacity-80">
-					<Logo className="size-7" />
-					<span className="text-[17px] font-semibold tracking-[-0.03em]">Otter</span>
+		<header className="sticky top-0 z-50 border-b border-border bg-card/85 backdrop-blur-xl">
+			<div className="site-container flex h-14 items-center gap-4">
+				<Link to="/" aria-label={m.home()} className="flex items-center gap-2 text-foreground transition-opacity hover:opacity-80">
+					<Logo className="size-6" />
+					<span className="text-[17px] font-bold tracking-[-0.03em]">Otter</span>
 				</Link>
-
 				<nav className="hidden items-center sm:flex">
-					<Link to="/models" className="rounded-full px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground">
+					<Link to="/models" className={linkClass}>
 						{m.models()}
 					</Link>
+					<Link to="/docs" className={linkClass}>
+						{m.documentation()}
+					</Link>
 				</nav>
-
-				<ul className="ms-auto flex items-center gap-4">
-					{import.meta.env.DEV && (
-						<button
-							type="button"
-							aria-label="Toggle theme (dev)"
-							onClick={() => document.documentElement.classList.toggle('dark')}
-							className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
-							<Sun className="size-4 dark:hidden" />
-							<Moon className="hidden size-4 dark:block" />
-						</button>
-					)}
+				<ul className="ms-auto flex items-center gap-2">
 					<LanguageSelector locale={locale} availableLocales={availableLocales} onLocaleChange={onLocaleChange} />
 					<li>
 						<Button size="sm" asChild>
-							<a href="#download" onClick={onDownloadClick}>
-								{m.download()}
-							</a>
+							<a href={DOWNLOAD_URL}>{m.download()}</a>
 						</Button>
 					</li>
 				</ul>
