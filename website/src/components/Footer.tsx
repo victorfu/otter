@@ -39,9 +39,6 @@ export default function Footer({ onOpenSupport, onOpenPrivacyPolicy }: FooterPro
 						<Link className={linkClass} to="/">
 							{m.home()}
 						</Link>
-						<Link className={linkClass} to="/features">
-							{m.features()}
-						</Link>
 						<Link className={linkClass} to="/models">
 							{m.models()}
 						</Link>

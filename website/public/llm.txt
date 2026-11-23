@@ -7,7 +7,6 @@ Otter is a local-first transcription app for audio and video.
 
 Key pages:
 - Home: https://victorfu.github.io/otter/
-- Features: https://victorfu.github.io/otter/features
 - Documentation: https://victorfu.github.io/otter/docs
 - Privacy Policy: https://victorfu.github.io/otter/docs/PRIVACY_POLICY.md
 
