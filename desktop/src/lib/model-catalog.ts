@@ -314,10 +314,15 @@ export function groupForLanguage(models: CatalogModel[], language: string): Cata
 		language === ANY_LANGUAGE
 			? everyLanguage
 			: [...models.filter((model) => model.languages.includes(language)), ...models.filter((model) => !model.languages.includes(language) && serves(model, language))]
+	// The language's regional models close its list, where they can be found but are never its recommendation.
+	const regional =
+		language === ANY_LANGUAGE || language !== baseLanguage(language)
+			? []
+			: models.filter((model) => !specific.includes(model) && model.languages.some((code) => code !== language && baseLanguage(code) === language))
 	const multilingual = everyLanguage.filter((model) => !specific.includes(model))
 	const recommended = specific.find(isRecommended) ?? multilingual.find(isRecommended) ?? null
 	return {
-		primary: [...(recommended ? [recommended] : []), ...specific.filter((model) => model !== recommended)],
+		primary: [...(recommended ? [recommended] : []), ...specific.filter((model) => model !== recommended), ...regional],
 		multilingual: multilingual.filter((model) => model !== recommended),
 		recommendedId: recommended?.id ?? null,
 	}

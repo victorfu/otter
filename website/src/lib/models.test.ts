@@ -114,8 +114,8 @@ suite('grouping', () => {
 		const taiwan = modelsFor('zh-TW')
 		expect(taiwan.top?.id).toBe('breeze-asr-25')
 		expect(ids(taiwan.first)).toEqual(['breeze-asr-25', 'nemotron-3.5-asr-streaming-0.6b'])
-		expect(ids(modelsFor('zh').first)).not.toContain('breeze-asr-25')
-		expect(modelsFor('zh').top?.id).toBe('whisper-large-v3-turbo')
+		// Chinese lists it too, last and not recommended.
+		expect(ids(modelsFor('zh').first)).toEqual(['whisper-large-v3-turbo', 'nemotron-3.5-asr-streaming-0.6b', 'breeze-asr-25'])
 	})
 
 	it('never shows a model twice', () => {

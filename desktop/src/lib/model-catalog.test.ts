@@ -194,7 +194,8 @@ describe('groupForLanguage', () => {
 		expect(ids(taiwan.primary)).toEqual(['breeze', 'nemotron'])
 		expect(taiwan.recommendedId).toBe('breeze')
 		const chineseView = groupForLanguage(withTaiwan, 'zh')
-		expect(ids(chineseView.primary)).toEqual(['whisper-large-v3-turbo', 'nemotron'])
+		// Chinese lists the Taiwan model too, last and not recommended.
+		expect(ids(chineseView.primary)).toEqual(['whisper-large-v3-turbo', 'nemotron', 'breeze'])
 		expect(chineseView.recommendedId).toBe('whisper-large-v3-turbo')
 	})
 

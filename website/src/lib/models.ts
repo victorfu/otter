@@ -49,6 +49,15 @@ function modelsForLanguage(language: string) {
 	return [...own, ...general]
 }
 
+/** For a language as a whole (`zh`), its regional models (`zh-TW`): listed last, never its recommendation. */
+function regionalModels(language: string) {
+	if (language.includes('-')) return []
+	return models.filter((model) => {
+		const codes = languagesOf(model)
+		return !codes.includes(language) && codes.some((code) => code.split('-')[0] === language && code !== language)
+	})
+}
+
 /**
  * The languages a model is for. `["zh", "zh-TW"]` is a Chinese (Taiwan) model: the bare language is
  * there for apps that predate regions, which drop `zh-TW` and would otherwise drop the whole model.
@@ -90,7 +99,7 @@ export function modelsFor(language: string): ModelGroups {
 	const specific = recommendedFirst(modelsForLanguage(language))
 	const top = [...specific, ...multilingual].find((model) => model.tags.includes('recommended'))
 	const others = (list: Model[]) => list.filter((model) => model !== top)
-	return { top, first: [...(top ? [top] : []), ...others(specific)], rest: others(multilingual), divider: 'every' }
+	return { top, first: [...(top ? [top] : []), ...others(specific), ...regionalModels(language)], rest: others(multilingual), divider: 'every' }
 }
 
 /** The picker's starting point: the site's locale (`zh-TW`) or its language (`zh`) when the catalog knows it. */
