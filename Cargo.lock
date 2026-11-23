@@ -3924,6 +3924,7 @@ dependencies = [
  "futures",
  "futures-util",
  "glob",
+ "gtk",
  "hound",
  "keepawake",
  "libc",

@@ -168,6 +168,7 @@ async fn main() -> Result<()> {
             floating_dock::hide_floating_dock_menu,
             floating_dock::floating_dock_menu_ready,
             floating_dock::save_floating_dock_position,
+            floating_dock::start_floating_dock_drag,
             meeting_prompt::get_meeting_detection_enabled,
             meeting_prompt::set_meeting_detection_enabled,
             meeting_prompt::get_meeting_prompt_state,
