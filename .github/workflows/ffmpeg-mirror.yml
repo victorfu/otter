@@ -1,0 +1,29 @@
+# Mirror the pinned upstream FFmpeg archives, unchanged, into this repository's
+# $ffmpeg_tag release (upload-ffmpeg in the root chorefile). Run it by hand after
+# changing the FFmpeg pins there; a rerun re-uploads the same verified bytes.
+#   gh workflow run ffmpeg-mirror.yml
+name: FFmpeg mirror
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - uses: getchore/setup-chore@v1
+        with:
+          version: v1.6.0
+
+      - name: Mirror and upload
+        env:
+          GH_TOKEN: ${{ github.token }}
+          # The chorefile reads `rustc --print host-tuple` on load; the runner's stable
+          # toolchain answers it without installing the version rust-toolchain.toml pins.
+          RUSTUP_TOOLCHAIN: stable
+        run: chore upload-ffmpeg
