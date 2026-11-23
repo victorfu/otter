@@ -26,7 +26,7 @@
       "name": "Otter",
       "applicationCategory": "MultimediaApplication",
       "operatingSystem": "Windows, macOS, Linux",
-      "description": "Local-first transcription app for audio and video with AI summaries and multilingual support.",
+      "description": "Speech to text for clinical work: dictation and transcription that run on your own computer.",
       "url": "https://victorfu.github.io/otter/",
       "image": "https://victorfu.github.io/otter/preview.png",
       "publisher": {
