@@ -18,6 +18,7 @@ function baseName(name: string) {
  */
 export function DisplayLanguageInput({ value, onSelect, className }: { value: string; onSelect: (code: string) => void; className?: string }) {
 	const [query, setQuery] = useState('')
+	const locale = getLocale()
 	const selected = supportedLanguages[value] ? value : 'en-US'
 
 	const entries = useMemo<LanguageOption[]>(() => {
@@ -33,13 +34,14 @@ export function DisplayLanguageInput({ value, onSelect, className }: { value: st
 		return Object.entries(supportedLanguages)
 			.map(([code, name]) => ({
 				code,
-				label: code === 'zh-TW' ? '繁體中文（台灣）' : code === getLocale() ? getLocalizedLanguageName(name) : endonym(code),
+				label: code === 'zh-TW' ? '繁體中文（台灣）' : code === locale ? getLocalizedLanguageName(name) : endonym(code),
 				keywords: code === 'zh-TW' ? [name, '臺灣', 'Taiwan', 'Traditional Chinese'] : [name, endonym(code)],
 				flagCode: code === 'zh-TW' ? code : code.split('-')[0],
 				flagName: baseName(name),
 			}))
 			.sort((a, b) => a.label.localeCompare(b.label))
-	}, [])
+		// The current language's own row is translated, so the list is rebuilt when the UI language changes.
+	}, [locale])
 
 	const needle = query.trim().toLowerCase()
 	// Same layout as the transcription picker: a pinned "Popular" group, then the rest A–Z.
@@ -49,10 +51,10 @@ export function DisplayLanguageInput({ value, onSelect, className }: { value: st
 		const popular = POPULAR.flatMap((code) => entries.filter((entry) => entry.code === code))
 		const others = entries.filter((entry) => !POPULAR.includes(entry.code))
 		return [
-			{ label: m.popular(), items: popular },
-			{ label: m.others(), items: others },
+			{ label: m.popular({}, { locale }), items: popular },
+			{ label: m.others({}, { locale }), items: others },
 		].filter((group) => group.items.length)
-	}, [entries, needle])
+	}, [entries, needle, locale])
 
 	const triggerLabel = entries.find((entry) => entry.code === selected)?.label ?? m.selectLanguage()
 
