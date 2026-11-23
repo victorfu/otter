@@ -1,7 +1,6 @@
 import { invoke } from '@tauri-apps/api/core'
 import { platform } from '@tauri-apps/plugin-os'
 import { isNativeDesktop } from '~/lib/desktop-menu'
-import { mountPopoverMaterial } from '~/lib/popover-material'
 import { useEffect } from 'react'
 import { getTextDirection } from '~/paraglide/runtime.js'
 import { useTray } from '~/lib/tray'
@@ -46,16 +45,14 @@ function AppContent() {
 		root.dataset.platform = os
 		if (!isNativeDesktop()) return
 		let mounted = true
-		let dispose: (() => void) | undefined
+		// Popovers blur the app behind them. Cutting a hole through #root to show the window's own
+		// material repainted the whole window on every open, which made the language menu lag.
 		void invoke<{ material: boolean }>('window_chrome').then(chrome => {
 			if (!mounted) return
 			root.classList.toggle('native-material', chrome.material)
-			// TEMP A/B (do not commit): popover material off to test the language-menu lag.
-			if (chrome.material && false) dispose = mountPopoverMaterial()
 		}).catch(error => console.warn('Window appearance unavailable', error))
 		return () => {
 			mounted = false
-			dispose?.()
 			root.classList.remove('native-material')
 		}
 	}, [])
