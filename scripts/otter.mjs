@@ -16,7 +16,10 @@ const localClang = path.join(root, 'target', 'otter-tools', 'bindgen', 'clang', 
 if (!process.env.LIBCLANG_PATH && existsSync(localClang)) process.env.LIBCLANG_PATH = localClang
 
 const installHints = {
-  chore: 'Install it with: curl -fsSL https://getchore.github.io/chore/install.sh | sh (see docs/BUILDING.md)',
+  chore:
+    process.platform === 'win32'
+      ? 'Install it in PowerShell with: irm https://getchore.github.io/chore/install.ps1 | iex (see docs/BUILDING.md)'
+      : 'Install it with: curl -fsSL https://getchore.github.io/chore/install.sh | sh (see docs/BUILDING.md)',
   cargo: 'Install Rust from https://www.rust-lang.org/tools/install',
 }
 
