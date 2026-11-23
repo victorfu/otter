@@ -126,3 +126,8 @@ export const toggleFloatingDockMenu = () => invoke<void>('toggle_floating_dock_m
 export const hideFloatingDockMenu = () => invoke<void>('hide_floating_dock_menu')
 export const floatingDockMenuReady = (height: number) => invoke<void>('floating_dock_menu_ready', { height })
 export const saveFloatingDockPosition = () => invoke<void>('save_floating_dock_position')
+/**
+ * Closes the menu and moves the ball with the pointer until the button is released. `grabX` and
+ * `grabY` are where in the ball the button went down (CSS pixels).
+ */
+export const startFloatingDockDrag = (grabX: number, grabY: number) => invoke<void>('start_floating_dock_drag', { grabX, grabY })

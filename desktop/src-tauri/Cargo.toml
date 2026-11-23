@@ -79,6 +79,8 @@ base64 = "0.22"
 # Linux
 [target.'cfg(target_os = "linux")'.dependencies]
 openssl = { version = "0.10.75", features = ["vendored"] }
+# The floating dock's X11 window tweaks (override-redirect, dragging); same version Tauri uses.
+gtk = "0.18"
 
 # Windows
 [target.'cfg(windows)'.dependencies]

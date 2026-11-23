@@ -6,8 +6,8 @@ import {
 	DOCK_ACTION_EVENT,
 	DOCK_BALL_HOVER_EVENT,
 	DOCK_MENU_VISIBLE_EVENT,
-	hideFloatingDockMenu,
 	saveFloatingDockPosition,
+	startFloatingDockDrag,
 	startsDrag,
 	toggleFloatingDockMenu,
 	type DockAction,
@@ -29,7 +29,7 @@ export default function FloatingDockWindow() {
 	const status = useDockStatus()
 	const [menuOpen, setMenuOpen] = useState(false)
 	const [dragOver, setDragOver] = useState(false)
-	const pointerRef = useRef<{ x: number; y: number; dragging: boolean } | null>(null)
+	const pointerRef = useRef<{ x: number; y: number; grabX: number; grabY: number; dragging: boolean } | null>(null)
 
 	useEffect(() => {
 		const unlisten = listen<boolean>(DOCK_MENU_VISIBLE_EVENT, ({ payload }) => setMenuOpen(payload))
@@ -70,7 +70,7 @@ export default function FloatingDockWindow() {
 
 	function onPointerDown(event: PointerEvent<HTMLButtonElement>) {
 		if (event.button !== 0) return
-		pointerRef.current = { x: event.screenX, y: event.screenY, dragging: false }
+		pointerRef.current = { x: event.screenX, y: event.screenY, grabX: event.clientX, grabY: event.clientY, dragging: false }
 	}
 
 	async function onPointerMove(event: PointerEvent<HTMLButtonElement>) {
@@ -84,8 +84,7 @@ export default function FloatingDockWindow() {
 		if (!startsDrag(pointer, { x: event.screenX, y: event.screenY }, event.buttons)) return
 		pointer.dragging = true
 		try {
-			await hideFloatingDockMenu()
-			await getCurrentWindow().startDragging()
+			await startFloatingDockDrag(pointer.grabX, pointer.grabY)
 		} catch (error) {
 			console.error('Could not drag the floating dock:', error)
 		}

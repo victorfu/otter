@@ -7,6 +7,7 @@
 
 use crate::config::STORE_FILENAME;
 use crate::main_thread::on_main_thread;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use tauri::{AppHandle, Emitter, LogicalSize, Manager, Monitor, PhysicalPosition, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
 use tauri_plugin_store::StoreExt;
@@ -32,14 +33,17 @@ const PAD: f64 = 12.0;
 /// The ball window is exactly the ball: no transparent margin around it to catch clicks.
 const SLOT: f64 = BALL;
 
-/// The menu's content height in logical pixels, reported by the menu window once it has rendered.
 pub struct FloatingDockRuntime {
+    /// The menu's content height in logical pixels, reported by the menu window once it has rendered.
     menu_height: Mutex<f64>,
+    /// We are moving the ball with the pointer ourselves (Linux X11, see `linux::drag`).
+    #[cfg_attr(not(target_os = "linux"), allow(dead_code))]
+    dragging: AtomicBool,
 }
 
 impl Default for FloatingDockRuntime {
     fn default() -> Self {
-        Self { menu_height: Mutex::new(DEFAULT_MENU_HEIGHT) }
+        Self { menu_height: Mutex::new(DEFAULT_MENU_HEIGHT), dragging: AtomicBool::new(false) }
     }
 }
 
@@ -115,10 +119,24 @@ fn build_dock_window(
         .skip_taskbar(true)
         .transparent(true)
         .shadow(false)
-        .visible(position.is_some())
+        // Linux shows it below, once it is override-redirect (see `linux::float_above_panels`).
+        .visible(position.is_some() && !cfg!(target_os = "linux"))
         .on_navigation(crate::setup::navigation_guard(app))
         .build()
         .map_err(|error| error.to_string())?;
+
+    #[cfg(target_os = "linux")]
+    {
+        let dock = window.clone();
+        let show = position.is_some();
+        on_main_thread(app, move |_| {
+            linux::float_above_panels(&dock);
+            if show {
+                dock.show().map_err(|error| error.to_string())?;
+            }
+            Ok(())
+        })?;
+    }
 
     #[cfg(target_os = "macos")]
     crate::native_window::with_ns_window(&window, |native_window| {
@@ -230,8 +248,17 @@ fn show_menu(app: &AppHandle) -> Result<(), String> {
     on_main_thread(app, move |app| place_and_show_menu(app, &ball, &menu))
 }
 
+/// Where a dock window is, in physical pixels. Main thread only.
+fn dock_position(window: &WebviewWindow) -> Result<PhysicalPosition<i32>, String> {
+    #[cfg(target_os = "linux")]
+    if let Some(position) = linux::position(window) {
+        return Ok(position);
+    }
+    window.outer_position().map_err(|error| error.to_string())
+}
+
 fn place_and_show_menu(app: &AppHandle, ball: &WebviewWindow, menu: &WebviewWindow) -> Result<(), String> {
-    let position = ball.outer_position().map_err(|error| error.to_string())?;
+    let position = dock_position(ball)?;
     let probe = ball.scale_factor().map_err(|error| error.to_string())?;
     let monitor = monitor_at(ball, position.x as f64 + SLOT * probe / 2.0, position.y as f64 + SLOT * probe / 2.0)?;
     let scale = monitor.scale_factor();
@@ -314,26 +341,154 @@ fn set_fixed_size(window: &WebviewWindow, width: f64, height: f64) -> Result<(),
     Ok(())
 }
 
-/// Remember where the user dragged the ball.
+/// Remember where the user dragged the ball. Ignored while we drag it ourselves: the pointer may
+/// rest over a panel mid-drag, and the drag saves once the button is released.
 #[tauri::command]
 pub fn save_floating_dock_position(app: AppHandle, window: WebviewWindow) -> Result<(), String> {
-    let position = window.outer_position().map_err(|error| error.to_string())?;
-    let scale = window.scale_factor().map_err(|error| error.to_string())?;
-    let size = SLOT * scale;
-    let probe = window.clone();
-    let work = on_main_thread(&app, move |_| {
-        Ok(work_area(&monitor_at(&probe, position.x as f64 + size / 2.0, position.y as f64 + size / 2.0)?))
-    })?;
-    let (x, y) = clamp_to_work_area(position.x as f64, position.y as f64, size, size, EDGE * scale, work);
-    let (x, y) = (x.round() as i32, y.round() as i32);
-    if (x, y) != (position.x, position.y) {
-        window
-            .set_position(PhysicalPosition::new(x, y))
-            .map_err(|error| error.to_string())?;
+    if app.state::<FloatingDockRuntime>().dragging.load(Ordering::Acquire) {
+        return Ok(());
     }
+    save_position(&app, &window)
+}
+
+/// Drag the ball with the pointer. Closes the menu first: it would be left behind. `grab_x` and
+/// `grab_y` are where in the ball (logical pixels) the button went down, so the ball stays under the
+/// pointer exactly where it was grabbed.
+#[tauri::command]
+pub fn start_floating_dock_drag(app: AppHandle, window: WebviewWindow, grab_x: f64, grab_y: f64) -> Result<(), String> {
+    #[cfg(not(target_os = "linux"))]
+    let _ = (grab_x, grab_y);
+    hide_menu(&app)?;
+    // Override-redirect windows are not the window manager's to move, and moving the window
+    // ourselves follows the pointer more closely than GNOME's own window move did.
+    #[cfg(target_os = "linux")]
+    {
+        let ball = window.clone();
+        let dragging = on_main_thread(&app, move |app| {
+            if !linux::is_x11() {
+                return Ok(false);
+            }
+            linux::drag(app, ball, (grab_x.round() as i32, grab_y.round() as i32)).map(|()| true)
+        })?;
+        if dragging {
+            return Ok(());
+        }
+    }
+    window.start_dragging().map_err(|error| error.to_string())
+}
+
+/// Clamp the ball onto its monitor and store where it is.
+fn save_position(app: &AppHandle, window: &WebviewWindow) -> Result<(), String> {
+    let window = window.clone();
+    let (x, y) = on_main_thread(app, move |_| {
+        let position = dock_position(&window)?;
+        let scale = window.scale_factor().map_err(|error| error.to_string())?;
+        let size = SLOT * scale;
+        let work = work_area(&monitor_at(&window, position.x as f64 + size / 2.0, position.y as f64 + size / 2.0)?);
+        let (x, y) = clamp_to_work_area(position.x as f64, position.y as f64, size, size, EDGE * scale, work);
+        let (x, y) = (x.round() as i32, y.round() as i32);
+        if (x, y) != (position.x, position.y) {
+            window
+                .set_position(PhysicalPosition::new(x, y))
+                .map_err(|error| error.to_string())?;
+        }
+        Ok((x, y))
+    })?;
     let store = app.store(STORE_FILENAME).map_err(|error| error.to_string())?;
     store.set(POSITION_KEY, serde_json::json!({ "x": x, "y": y }));
     store.save().map_err(|error| error.to_string())
+}
+
+#[cfg(target_os = "linux")]
+mod linux {
+    use super::FloatingDockRuntime;
+    use gtk::gdk::ModifierType;
+    use gtk::glib::{self, prelude::*};
+    use gtk::prelude::*;
+    use std::sync::atomic::Ordering;
+    use std::time::Duration;
+    use tauri::{AppHandle, Manager, PhysicalPosition, WebviewWindow};
+
+    /// How often a drag follows the pointer: faster than the screen refreshes.
+    const DRAG_TICK: Duration = Duration::from_millis(8);
+
+    /// Whether GTK talks to an X server. Wayland lets no window place itself or cover the panels.
+    /// Main thread only.
+    pub fn is_x11() -> bool {
+        gtk::gdk::Display::default().is_some_and(|display| display.type_().name() == "GdkX11Display")
+    }
+
+    /// Make a dock window override-redirect, the way menus and tooltips are. GNOME Shell draws its
+    /// top bar and dock above every window it manages, always-on-top ones included, but draws
+    /// override-redirect windows above its panels, so the ball no longer slides under them. The
+    /// shell still takes clicks over its panels, which is why the ball settles inside the work
+    /// area. Such a window takes no focus, shows on every workspace and is moved only by us (see
+    /// `drag`). The window must not be showing yet.
+    /// Main thread only.
+    pub fn float_above_panels(window: &WebviewWindow) {
+        if !is_x11() {
+            return;
+        }
+        let Ok(gtk_window) = window.gtk_window() else { return };
+        gtk_window.realize();
+        if let Some(gdk_window) = gtk_window.window() {
+            gdk_window.set_override_redirect(true);
+        }
+    }
+
+    /// Where an override-redirect window is, in physical pixels; `None` when not on X11.
+    ///
+    /// Tauri's `outer_position` comes from GDK's root origin, which for a window no window
+    /// manager frames is in device pixels; Tauri scales it again, so on a 2x display every
+    /// position read back doubled. `gdk_window_get_origin` asks the X server and scales correctly.
+    /// Main thread only.
+    pub fn position(window: &WebviewWindow) -> Option<PhysicalPosition<i32>> {
+        if !is_x11() {
+            return None;
+        }
+        let gtk_window = window.gtk_window().ok()?;
+        let (_, x, y) = gtk_window.window()?.origin();
+        let scale = gtk_window.scale_factor();
+        Some(PhysicalPosition::new(x * scale, y * scale))
+    }
+
+    /// Move the window with the pointer, held at `grab` inside it (logical pixels), until the
+    /// primary button is released, then save where it landed. Main thread only.
+    pub fn drag(app: &AppHandle, window: WebviewWindow, grab: (i32, i32)) -> Result<(), String> {
+        let gtk_window = window.gtk_window().map_err(|error| error.to_string())?;
+        let display = gtk_window.display();
+        let pointer = display
+            .default_seat()
+            .and_then(|seat| seat.pointer())
+            .ok_or_else(|| "no pointer to drag the floating dock with".to_string())?;
+        let root = GtkWindowExt::screen(&gtk_window)
+            .ok_or_else(|| "no screen to drag the floating dock on".to_string())?
+            .root_window()
+            .ok_or_else(|| "no root window to drag the floating dock on".to_string())?;
+        if app.state::<FloatingDockRuntime>().dragging.swap(true, Ordering::AcqRel) {
+            return Ok(()); // Already following the pointer.
+        }
+        // In GDK's logical pixels, as `move_` takes them (see `position` for why not others).
+        let mut last = gtk_window.window().map(|window| window.origin()).map(|(_, x, y)| (x, y));
+        let app = app.clone();
+        glib::timeout_add_local(DRAG_TICK, move || {
+            let (_, x, y, buttons) = root.device_position(&pointer);
+            if !buttons.contains(ModifierType::BUTTON1_MASK) {
+                app.state::<FloatingDockRuntime>().dragging.store(false, Ordering::Release);
+                if let Err(error) = super::save_position(&app, &window) {
+                    tracing::warn!("Could not save the floating dock position: {error}");
+                }
+                return glib::ControlFlow::Break;
+            }
+            let next = (x - grab.0, y - grab.1);
+            if Some(next) != last {
+                gtk_window.move_(next.0, next.1);
+                last = Some(next);
+            }
+            glib::ControlFlow::Continue
+        });
+        Ok(())
+    }
 }
 
 /// A rectangle in physical pixels.
