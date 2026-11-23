@@ -25,11 +25,11 @@ const MENU_WIDTH: f64 = 248.0;
 const DEFAULT_MENU_HEIGHT: f64 = 254.0;
 const GAP: f64 = 8.0;
 const EDGE: f64 = 8.0;
-/// Transparent margin around the ball and the menu so their shadows are not clipped into a
-/// square. Must match `PAD` in the two dock windows.
+/// Transparent margin around the menu so its shadow is not clipped into a square. Must match `PAD`
+/// in the menu window.
 const PAD: f64 = 12.0;
-/// The ball window: the ball plus its margin.
-const SLOT: f64 = BALL + 2.0 * PAD;
+/// The ball window is exactly the ball: no transparent margin around it to catch clicks.
+const SLOT: f64 = BALL;
 
 /// The menu's content height in logical pixels, reported by the menu window once it has rendered.
 pub struct FloatingDockRuntime {
@@ -94,10 +94,17 @@ fn build_dock_window(
     if let Some((x, y)) = position {
         builder = builder.position(x, y);
     }
+    // GTK ignores the requested size of a non-resizable window and gives it at least 200x200,
+    // which left an invisible square catching clicks around the ball.
+    // Linux therefore pins the size with equal min and max sizes instead.
+    #[cfg(target_os = "linux")]
+    {
+        builder = builder.min_inner_size(width, height).max_inner_size(width, height);
+    }
     let window = builder
         .inner_size(width, height)
         .decorations(false)
-        .resizable(false)
+        .resizable(cfg!(target_os = "linux"))
         .always_on_top(true)
         .visible_on_all_workspaces(true)
         .focused(false)
@@ -141,7 +148,7 @@ fn create_ball_window(app: &AppHandle) -> Result<WebviewWindow, String> {
         .map(work_area)
         .collect();
     let scale = primary.scale_factor();
-    let (x, y) = restore_position(saved_position(app), SLOT * scale, &work_areas, work_area(&primary), (EDGE - PAD) * scale);
+    let (x, y) = restore_position(saved_position(app), SLOT * scale, &work_areas, work_area(&primary), EDGE * scale);
     let window = build_dock_window(app, BALL_LABEL, "floating-dock", SLOT, SLOT, Some((x / scale, y / scale)))?;
     // The builder takes logical pixels; set the exact physical spot in case the monitor's scale differs.
     window
@@ -224,8 +231,8 @@ fn show_menu(app: &AppHandle) -> Result<(), String> {
         .lock()
         .map_err(|error| error.to_string())?;
     let ball_rect = Rect {
-        x: position.x as f64 + PAD * scale,
-        y: position.y as f64 + PAD * scale,
+        x: position.x as f64,
+        y: position.y as f64,
         w: BALL * scale,
         h: BALL * scale,
     };
@@ -280,9 +287,25 @@ pub fn floating_dock_menu_ready(
     height: f64,
 ) -> Result<(), String> {
     *runtime.menu_height.lock().map_err(|error| error.to_string())? = height;
-    window
-        .set_size(LogicalSize::new(MENU_WIDTH + 2.0 * PAD, height + 2.0 * PAD))
-        .map_err(|error| error.to_string())
+    set_fixed_size(&window, MENU_WIDTH + 2.0 * PAD, height + 2.0 * PAD)
+}
+
+/// Resize a dock window. On Linux the window is pinned by equal min and max sizes instead of
+/// `resizable(false)` (see `build_dock_window`), so those move with it.
+fn set_fixed_size(window: &WebviewWindow, width: f64, height: f64) -> Result<(), String> {
+    let size = LogicalSize::new(width, height);
+    #[cfg(target_os = "linux")]
+    {
+        window.set_min_size(None::<LogicalSize<f64>>).map_err(|error| error.to_string())?;
+        window.set_max_size(None::<LogicalSize<f64>>).map_err(|error| error.to_string())?;
+    }
+    window.set_size(size).map_err(|error| error.to_string())?;
+    #[cfg(target_os = "linux")]
+    {
+        window.set_min_size(Some(size)).map_err(|error| error.to_string())?;
+        window.set_max_size(Some(size)).map_err(|error| error.to_string())?;
+    }
+    Ok(())
 }
 
 /// Remember where the user dragged the ball.
@@ -292,7 +315,7 @@ pub fn save_floating_dock_position(app: AppHandle, window: WebviewWindow) -> Res
     let scale = window.scale_factor().map_err(|error| error.to_string())?;
     let size = SLOT * scale;
     let monitor = monitor_at(&window, position.x as f64 + size / 2.0, position.y as f64 + size / 2.0)?;
-    let (x, y) = clamp_to_work_area(position.x as f64, position.y as f64, size, size, (EDGE - PAD) * scale, work_area(&monitor));
+    let (x, y) = clamp_to_work_area(position.x as f64, position.y as f64, size, size, EDGE * scale, work_area(&monitor));
     let (x, y) = (x.round() as i32, y.round() as i32);
     if (x, y) != (position.x, position.y) {
         window

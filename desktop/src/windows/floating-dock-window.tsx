@@ -15,7 +15,7 @@ import {
 import { cn } from '~/lib/style'
 import { m } from '~/paraglide/messages.js'
 import logoUrl from '../../../design/logo.png?url'
-import { PAD, useDockStatus, useDockWindowSetup } from './floating-dock-shared'
+import { useDockStatus, useDockWindowSetup } from './floating-dock-shared'
 
 /** Logical pixels; must match `BALL` in `floating_dock.rs`. */
 const BALL = 56
@@ -103,8 +103,8 @@ export default function FloatingDockWindow() {
 	const busy = status.recording || status.dictating
 
 	return (
-		// The transparent padding leaves room for the shadow; without it the shadow is clipped to a square.
-		<div className="h-screen w-screen select-none" style={{ padding: PAD }}>
+		// The window is exactly the ball, so there is no room for a drop shadow; the ring outlines it.
+		<div className="h-screen w-screen select-none">
 			<button
 				type="button"
 				aria-label={m.appTitle()}
@@ -118,10 +118,10 @@ export default function FloatingDockWindow() {
 				onPointerLeave={() => hover(false)}
 				style={{ width: BALL, height: BALL }}
 				className={cn(
-					'relative flex items-center justify-center rounded-full bg-card shadow-[0_2px_10px_rgba(0,0,0,0.25)] ring-1 ring-border/60 transition-transform',
-					dragOver && 'scale-110 ring-4 ring-primary',
+					'relative flex items-center justify-center rounded-full bg-card ring-1 ring-inset ring-border transition-transform',
+					dragOver && 'ring-4 ring-primary',
 				)}>
-				<img src={logoUrl} alt="" draggable={false} className="pointer-events-none h-9 w-9" />
+				<img src={logoUrl} alt="" draggable={false} className="pointer-events-none h-9 w-9 dark:invert" />
 				{busy && <span className="absolute right-1 top-1 h-2.5 w-2.5 animate-pulse rounded-full bg-red-500" />}
 			</button>
 		</div>

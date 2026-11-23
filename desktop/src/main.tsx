@@ -9,6 +9,17 @@ document.addEventListener('securitypolicyviolation', (event) => {
 	console.error('[csp] blocked', event.effectiveDirective, event.blockedURI)
 })
 
+// Transparent windows must be transparent from their very first frame. globals.css paints the body
+// as soon as it loads, before React mounts; WebKitGTK never clears what later frames leave
+// transparent, so that first opaque frame stayed behind the floating dock ball on Linux.
+const transparentWindows: Record<string, string> = {
+	'floating-dock': 'floating-dock-window',
+	'floating-dock-menu': 'floating-dock-window',
+	'dictation-indicator': 'dictation-indicator-window',
+}
+const transparentClass = transparentWindows[new URLSearchParams(window.location.search).get('window') ?? '']
+if (transparentClass) document.documentElement.classList.add(transparentClass)
+
 async function boot() {
 	if (import.meta.env.DEV && !('__TAURI_INTERNALS__' in window)) {
 		const { installMockTauri } = await import('./mock-tauri')

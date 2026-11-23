@@ -8,8 +8,8 @@ import { m } from '~/paraglide/messages.js'
 import { getLocale, getTextDirection, setLocale } from '~/paraglide/runtime.js'
 
 /**
- * Transparent margin (logical pixels) around the ball and the menu so their shadows are not
- * clipped into a square. Must match `PAD` in `floating_dock.rs`.
+ * Transparent margin (logical pixels) around the menu so its shadow is not clipped into a square.
+ * Must match `PAD` in `floating_dock.rs`. The ball's window has none: it is exactly the ball.
  */
 export const PAD = 12
 
@@ -26,8 +26,9 @@ export function useDockWindowSetup() {
 		document.title = m.appTitle()
 		document.body.dir = direction
 		document.documentElement.classList.toggle('dark', theme === 'dark')
+		// Also set in main.tsx before the first paint. Never removed: one opaque frame would stay
+		// behind the ball on Linux (see main.tsx).
 		document.documentElement.classList.add('floating-dock-window')
-		return () => document.documentElement.classList.remove('floating-dock-window')
 	}, [direction, theme])
 }
 
