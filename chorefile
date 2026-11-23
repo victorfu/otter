@@ -40,6 +40,11 @@ diarize_model_sum=a25f026847d765c8661fd5095c73a0e5f20d310dcb8249c654e3828592a2fc
 turbo_model=ggml-large-v3-turbo.bin
 turbo_model_source=https://huggingface.co/ggerganov/whisper.cpp/resolve/main/$turbo_model
 turbo_model_sum=1fc70f774d38eb169993ac391eea357ef47c88757ef72ee5943879b7e8e2bc69
+# The Hugging Face organization that hosts Otter's GGUF models (upload-hf-models).
+# They were first published by vibe-app; hf_source is where the one-time copy reads
+# them from, unchanged.
+hf_org=otter-app
+hf_source=vibe-app
 # Tauri's GStreamer plugin release, a tag of tauri-apps/tauri-gstreamer-plugin.
 gst_plugin=gst-plugin-tauri-v0.0.1
 
@@ -152,6 +157,50 @@ task upload-models {
     gh release upload $models_tag $stage/$diarize_model $stage/$turbo_model --repo $repo --clobber
     remove $stage
     echo "uploaded runtime models to release $models_tag"
+}
+
+# Copy the ASR models and the diarization model from $hf_source, unchanged, into $hf_org on Hugging Face.
+# CI runs it from .github/workflows/hf-models-mirror.yml; it needs `hf` and HF_TOKEN.
+# The hashes are the ones website/public/models.json pins, so keep the two in step.
+task upload-hf-models {
+    hf-mirror zipformer2-66m-streaming-he-gguf zipformer2-66m-streaming-he-q8_0.gguf 5af82236b6b9a26150f1425b23da84acf761441859228529250f29f13373bdf4 cc-by-4.0 thewh1teagle/zipformer2-66m-streaming-he
+    hf-mirror parakeet-tdt-0.6b-v3-he-gguf parakeet-tdt-0.6b-v3-he-q8_0.gguf 37a6787344617fd7402397cd7ec4dd4f4bda779cb3112ac571e7b3329194e8dd cc-by-4.0 thewh1teagle/parakeet-tdt-0.6b-v3-he
+    hf-mirror zipformer2-66m-streaming-sk-gguf zipformer2-66m-streaming-sk-q8_0.gguf bebae65aabf5544a8f4b503e9b014b75a52c0b8d301078d8173bed442c104113 cc-by-4.0 neurlang/zipformer2-66m-streaming-sk
+    hf-mirror parakeet-tdt-0.6b-v3-gguf parakeet-tdt-0.6b-v3-Q4_K_M.gguf 5c61c041314d87ef1ffc278f5fb1a8ea25cceb8ce6053f8b516bab7ba16d7508 cc-by-4.0 nvidia/parakeet-tdt-0.6b-v3
+    hf-mirror nemotron-3.5-asr-streaming-0.6b-gguf nemotron-3.5-asr-streaming-0.6b-Q4_K_M.gguf 41c99fa5fb6f3d35f68e79adc3e755eca2232a8d921178bd647b71194792b8fd openmdw-1.1 nvidia/nemotron-3.5-asr-streaming-0.6b
+    hf-mirror nemotron-3-diarization-gguf $diarize_model $diarize_model_sum openmdw-1.1 nvidia/Nemotron-3-Diarization
+    echo "uploaded the models to huggingface.co/$hf_org"
+}
+
+# Copy one model file from $hf_source/<name> to $hf_org/<name> with a model card: hf-mirror <name> <file> <sha256> <license> <base model>.
+task hf-mirror name file sum license base {
+    stage=target/hf-mirror/$1
+    remove $stage
+    mkdir $stage
+    download https://huggingface.co/$hf_source/$1/resolve/main/$2 $stage/$2 --timeout 900 --sha256 $3
+    card=$stage/README.md
+    write $card "---"
+    # The Hub accepts only its own license ids; any other goes in as `other` plus a name.
+    if $4 == cc-by-4.0 {
+        echo "license: $4" >> $card
+    } else {
+        echo "license: other" >> $card
+        echo "license_name: $4" >> $card
+    }
+    echo "base_model: $5" >> $card
+    echo "library_name: ggml" >> $card
+    echo "tags: [automatic-speech-recognition, gguf, otter]" >> $card
+    echo "---" >> $card
+    echo "" >> $card
+    echo "# $1" >> $card
+    echo "" >> $card
+    echo "The GGUF model file the [Otter](https://github.com/$repo) app downloads on demand." >> $card
+    echo "" >> $card
+    echo "An unchanged copy of [$hf_source/$1](https://huggingface.co/$hf_source/$1), converted from [$5](https://huggingface.co/$5). Review the upstream model card and its license before use." >> $card
+    echo "" >> $card
+    echo "SHA-256 of $2: $3" >> $card
+    hf upload $hf_org/$1 $stage . --repo-type model --commit-message "Mirror $2 from $hf_source/$1"
+    remove $stage
 }
 
 # Fetch Tauri's GStreamer plugin for asset:// playback into the Linux packages: gst-plugin <triple>.
