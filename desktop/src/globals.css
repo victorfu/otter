@@ -796,6 +796,11 @@ html.native-material,html.native-material body { background:transparent; }
 [role=menu],[data-radix-popper-content-wrapper] > :is([role=dialog],[role=listbox]) {
 	background-color:var(--floating); backdrop-filter:blur(22px); border:1px solid var(--border);
 }
+/* Over the Settings panel, which already blurs what is behind it, a second backdrop blur makes
+   WebKit re-filter the panel on every open frame and hover. The menu is 90% opaque anyway. */
+body:has(.preferences-panel) [data-radix-popper-content-wrapper] > :is([role=dialog],[role=listbox],[role=menu]) {
+	background-color:var(--popover); backdrop-filter:none;
+}
 .dark { --shadow:0 0 0 1px var(--border); --shadow-sm:none; --shadow-md:var(--shadow); --shadow-lg:var(--shadow); --shadow-xl:var(--shadow); --shadow-2xl:var(--shadow); }
 .preferences-scrim { position:fixed; inset:0; z-index:50; background:rgb(0 0 0 / .2); }
 .preferences-panel {

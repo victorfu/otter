@@ -4,6 +4,9 @@ import { getLocale } from '~/paraglide/runtime.js'
 import { getLocalizedLanguageName, supportedLanguages } from '~/lib/i18n'
 import { LanguageCombobox, matchesQuery, type LanguageGroup, type LanguageOption } from '~/components/language-combobox'
 
+/** Pinned to the top of the list, in this order: English, Taiwan, then the common Asian locales. */
+const POPULAR = ['en-US', 'zh-TW', 'ja-JP', 'ko-KR', 'zh-HK', 'zh-CN', 'vi-VN', 'hi-IN']
+
 /** "spanish (ES)" → "spanish", so the flag map can find it. */
 function baseName(name: string) {
 	return name.replace(/\s*\([^)]*\)$/, '').trim()
@@ -39,7 +42,17 @@ export function DisplayLanguageInput({ value, onSelect, className }: { value: st
 	}, [])
 
 	const needle = query.trim().toLowerCase()
-	const groups = useMemo<LanguageGroup[]>(() => [{ label: null, items: entries.filter((entry) => matchesQuery(entry, needle)) }], [entries, needle])
+	// Same layout as the transcription picker: a pinned "Popular" group, then the rest A–Z.
+	// Searching flattens it into one list of matches.
+	const groups = useMemo<LanguageGroup[]>(() => {
+		if (needle) return [{ label: null, items: entries.filter((entry) => matchesQuery(entry, needle)) }]
+		const popular = POPULAR.flatMap((code) => entries.filter((entry) => entry.code === code))
+		const others = entries.filter((entry) => !POPULAR.includes(entry.code))
+		return [
+			{ label: m.popular(), items: popular },
+			{ label: m.others(), items: others },
+		].filter((group) => group.items.length)
+	}, [entries, needle])
 
 	const triggerLabel = entries.find((entry) => entry.code === selected)?.label ?? m.selectLanguage()
 
