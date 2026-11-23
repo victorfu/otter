@@ -41,7 +41,8 @@ export const segmentModelFilename = 'segmentation-3.0.onnx'
  * the HF safetensors by `server/crates/nemotron-diarize-rs/scripts/export.py --dtype q8_0`.
  * Q8_0 matches F32 segments on our checks at a quarter of the size.
  *
- * Published to the vibe-app Hugging Face org from `nvidia/Nemotron-3-Diarization` (OpenMDW 1.1).
+ * Published to the vibe-app Hugging Face org from `nvidia/Nemotron-3-Diarization` (OpenMDW 1.1), and
+ * served from this repository's `models-r1` release, an unchanged copy (`chore upload-models`).
  *
  * Anyone upgrading has speaker recognition on with this file missing: the transcription queue
  * runs the same download gate as the switch before the run. The models they had before stay
