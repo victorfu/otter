@@ -65,7 +65,27 @@ fn work_area(monitor: &Monitor) -> Rect {
     }
 }
 
+/// Run `f` on the main thread and wait for its result; inline when already there.
+///
+/// Every monitor query goes through here. Tauri fetches a monitor on the main thread but turns it
+/// into a `Monitor` on the caller's thread, and on Linux that reads the work area from the X
+/// server. Async commands run on tokio workers, so two threads talked to Xlib at once and GTK
+/// aborted with BadImplementation the moment the ball was clicked.
+fn on_main_thread<T: Send + 'static>(
+    app: &AppHandle,
+    f: impl FnOnce(&AppHandle) -> Result<T, String> + Send + 'static,
+) -> Result<T, String> {
+    let (tx, rx) = std::sync::mpsc::channel();
+    let handle = app.clone();
+    app.run_on_main_thread(move || {
+        let _ = tx.send(f(&handle));
+    })
+    .map_err(|error| error.to_string())?;
+    rx.recv().map_err(|error| error.to_string())?
+}
+
 /// The monitor under the point, falling back to the window's own and then the primary one.
+/// Main thread only; see `on_main_thread`.
 fn monitor_at(window: &WebviewWindow, x: f64, y: f64) -> Result<Monitor, String> {
     window
         .monitor_from_point(x, y)
@@ -135,19 +155,24 @@ fn build_dock_window(
 
 /// The ball is built visible at its place (see `build_dock_window`) so it accepts dropped files.
 fn create_ball_window(app: &AppHandle) -> Result<WebviewWindow, String> {
-    let primary = app
-        .primary_monitor()
-        .ok()
-        .flatten()
-        .ok_or_else(|| "no monitor to place the floating dock on".to_string())?;
-    let work_areas: Vec<Rect> = app
-        .available_monitors()
-        .map_err(|error| error.to_string())?
-        .iter()
-        .map(work_area)
-        .collect();
-    let scale = primary.scale_factor();
-    let (x, y) = restore_position(saved_position(app), SLOT * scale, &work_areas, work_area(&primary), EDGE * scale);
+    // The window itself is built here, not on the main thread: building a webview window from a
+    // main-thread callback deadlocks on Windows.
+    let (x, y, scale) = on_main_thread(app, |app| {
+        let primary = app
+            .primary_monitor()
+            .ok()
+            .flatten()
+            .ok_or_else(|| "no monitor to place the floating dock on".to_string())?;
+        let work_areas: Vec<Rect> = app
+            .available_monitors()
+            .map_err(|error| error.to_string())?
+            .iter()
+            .map(work_area)
+            .collect();
+        let scale = primary.scale_factor();
+        let (x, y) = restore_position(saved_position(app), SLOT * scale, &work_areas, work_area(&primary), EDGE * scale);
+        Ok((x, y, scale))
+    })?;
     let window = build_dock_window(app, BALL_LABEL, "floating-dock", SLOT, SLOT, Some((x / scale, y / scale)))?;
     // The builder takes logical pixels; set the exact physical spot in case the monitor's scale differs.
     window
@@ -220,9 +245,13 @@ fn show_menu(app: &AppHandle) -> Result<(), String> {
         Some(menu) => menu,
         None => create_menu_window(app)?,
     };
+    on_main_thread(app, move |app| place_and_show_menu(app, &ball, &menu))
+}
+
+fn place_and_show_menu(app: &AppHandle, ball: &WebviewWindow, menu: &WebviewWindow) -> Result<(), String> {
     let position = ball.outer_position().map_err(|error| error.to_string())?;
     let probe = ball.scale_factor().map_err(|error| error.to_string())?;
-    let monitor = monitor_at(&ball, position.x as f64 + SLOT * probe / 2.0, position.y as f64 + SLOT * probe / 2.0)?;
+    let monitor = monitor_at(ball, position.x as f64 + SLOT * probe / 2.0, position.y as f64 + SLOT * probe / 2.0)?;
     let scale = monitor.scale_factor();
     let height = *app
         .state::<FloatingDockRuntime>()
@@ -309,8 +338,11 @@ pub fn save_floating_dock_position(app: AppHandle, window: WebviewWindow) -> Res
     let position = window.outer_position().map_err(|error| error.to_string())?;
     let scale = window.scale_factor().map_err(|error| error.to_string())?;
     let size = SLOT * scale;
-    let monitor = monitor_at(&window, position.x as f64 + size / 2.0, position.y as f64 + size / 2.0)?;
-    let (x, y) = clamp_to_work_area(position.x as f64, position.y as f64, size, size, EDGE * scale, work_area(&monitor));
+    let probe = window.clone();
+    let work = on_main_thread(&app, move |_| {
+        Ok(work_area(&monitor_at(&probe, position.x as f64 + size / 2.0, position.y as f64 + size / 2.0)?))
+    })?;
+    let (x, y) = clamp_to_work_area(position.x as f64, position.y as f64, size, size, EDGE * scale, work);
     let (x, y) = (x.round() as i32, y.round() as i32);
     if (x, y) != (position.x, position.y) {
         window
