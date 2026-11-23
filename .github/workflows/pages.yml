@@ -1,0 +1,75 @@
+# Build the website (chore website-build) and publish it to GitHub Pages at
+# https://victorfu.github.io/otter/. Besides the site, Pages serves files the app reads:
+# models.json (the model catalog) and updater/*.json (the update channels).
+# Runs on every push to main that touches the site, and by hand:
+#   gh workflow run pages.yml
+name: Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - website/**
+      - docs/**
+      - i18n/website/**
+      - i18n/docs/**
+      - i18n/changelog/**
+      - i18n/locales.json
+      - scripts/website_links.py
+      - .github/workflows/pages.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time; a newer push replaces a queued one but never cancels a deploy in progress.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version-file: .node-version
+
+      - uses: pnpm/action-setup@v6.1.1
+        with:
+          package_json_file: website/package.json
+
+      - uses: astral-sh/setup-uv@v10.3.3
+
+      - uses: getchore/setup-chore@v1
+        with:
+          version: v1.6.0
+
+      - name: Build
+        env:
+          # website_links.py reads the latest release for the download links.
+          GH_TOKEN: ${{ github.token }}
+          # The chorefile reads `rustc --print host-tuple` on load; the runner's stable
+          # toolchain answers it without installing the version rust-toolchain.toml pins.
+          RUSTUP_TOOLCHAIN: stable
+        run: chore website-build
+
+      - uses: actions/configure-pages@v6.0.0
+
+      - uses: actions/upload-pages-artifact@v5.0.0
+        with:
+          path: website/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5.0.1

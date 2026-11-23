@@ -57,6 +57,10 @@ def map_assets(assets: list[dict]) -> list[dict]:
     return out
 
 
+class NoReleaseYet(Exception):
+    """The repository has no published (non-prerelease) release, so `releases/latest` is a 404."""
+
+
 def fetch_latest_release() -> dict:
     headers: dict[str, str] = {}
     gh_token = os.getenv("GH_TOKEN")
@@ -73,6 +77,8 @@ def fetch_latest_release() -> dict:
         response.raise_for_status()
         return response.json()
     except httpx.HTTPStatusError as exc:
+        if exc.response.status_code == 404:
+            raise NoReleaseYet() from exc
         body = exc.response.text
         raise RuntimeError(
             f"Failed to fetch latest release. Status: {exc.response.status_code} URL: {exc.request.url} Body: {body}"
@@ -82,6 +88,12 @@ def fetch_latest_release() -> dict:
 def main() -> int:
     try:
         latest_release = fetch_latest_release()
+    except NoReleaseYet:
+        # Before the first `v*` release the site still builds: the download buttons point at the
+        # repository (website/src/lib/links.ts), and the committed file is kept as it is.
+        print(f"No release published yet; keeping {RELEASES_PATH.name} unchanged.", file=sys.stderr)
+        return 0
+    try:
         tag_name = latest_release["tag_name"]
         valid_assets = filter_valid_assets(latest_release.get("assets", []))
         mapped_assets = map_assets(valid_assets)
