@@ -273,9 +273,13 @@ export function catalogLanguages(models: CatalogModel[]): string[] {
  * on a `zh-TW` (or `zh-Hant-TW`) system starts on Chinese (Taiwan).
  */
 export function defaultCatalogLanguage(transcriptionLanguage: string | null | undefined, uiLocale: string, models: CatalogModel[]): string {
+	const languages = catalogLanguages(models)
+	// A regional transcription language (zh-TW) the catalog has is the answer outright.
+	if (transcriptionLanguage?.includes('-') && CATALOG_LANGUAGE.test(transcriptionLanguage.trim()) && languages.includes(canonicalLanguage(transcriptionLanguage))) {
+		return canonicalLanguage(transcriptionLanguage)
+	}
 	const wanted = toIsoLanguage(transcriptionLanguage) ?? toIsoLanguage(uiLocale)
 	if (!wanted) return ANY_LANGUAGE
-	const languages = catalogLanguages(models)
 	const region = toIsoLanguage(uiLocale) === wanted ? /[-_]([A-Za-z]{2})\b/.exec(uiLocale)?.[1] : undefined
 	const regional = region ? canonicalLanguage(`${wanted}-${region}`) : null
 	if (regional && languages.includes(regional)) return regional

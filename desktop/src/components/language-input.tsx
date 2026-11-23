@@ -1,7 +1,8 @@
 import { subDays, isAfter } from 'date-fns'
 import { useMemo, useState } from 'react'
 import { m } from '~/paraglide/messages.js'
-import { getI18nLanguageName, getLocalizedLanguageName } from '~/lib/i18n'
+import { getLocalizedLanguageName } from '~/lib/i18n'
+import { getLocale } from '~/paraglide/runtime.js'
 import { cn } from '~/lib/style'
 import { usePreferenceProvider } from '~/providers/preference'
 import { Label } from '~/components/ui/label'
@@ -18,6 +19,11 @@ interface LanguageInputProps {
 /** The `auto` message ships a sparkle; it reads gimmicky inside a permanent toolbar control. */
 function stripDecoration(label: string) {
 	return label.replace(/\s*[✨\u{1F300}-\u{1FAFF}]\s*$/u, '').trim()
+}
+
+/** Search terms a language's names miss: Chinese (Taiwan) is also 臺灣, 華語 and 繁體 to its readers. */
+const EXTRA_KEYWORDS: Record<string, string[]> = {
+	'zh-TW': ['Taiwan', 'Traditional', '台灣', '臺灣', '華語', '國語', '繁體', '繁體中文'],
 }
 
 export default function LanguageInput({ variant = 'default' }: LanguageInputProps) {
@@ -40,7 +46,7 @@ export default function LanguageInput({ variant = 'default' }: LanguageInputProp
 		}
 		const list = (capabilities?.languages ?? []).map((code) => ({
 			label: of(displayNames, code),
-			keywords: [of(englishNames, code)],
+			keywords: [of(englishNames, code), ...(EXTRA_KEYWORDS[code] ?? [])],
 			flagCode: code,
 			flagName: of(englishNames, code),
 			code,
@@ -60,7 +66,10 @@ export default function LanguageInput({ variant = 'default' }: LanguageInputProp
 
 	// Grouped view for browsing; a flat filtered list the moment the user types.
 	const cutoff = subDays(new Date(), 7)
-	const popularLanguages = new Set(['english', 'en', 'hindi', 'hi', 'spanish', 'es', getI18nLanguageName()])
+	// The UI language joins them: its regional code when the engine has it (zh-TW), else its language (he).
+	const uiLocale = getLocale().toLowerCase()
+	const uiLanguage = entries.some((entry) => entry.code.toLowerCase() === uiLocale) ? uiLocale : uiLocale.split('-')[0]
+	const popularLanguages = new Set(['english', 'en', 'hindi', 'hi', 'spanish', 'es', 'zh-tw', uiLanguage])
 	const recentCodes = new Set(preference.recentLanguages.filter((r) => isAfter(r.ts, cutoff)).map((r) => r.code))
 	const needle = query.trim().toLowerCase()
 

@@ -321,7 +321,9 @@ export function PreferenceProvider({ children }: { children: ReactNode }) {
 
 	function setLanguageDefaults() {
 		if (supportedLanguages[preference.displayLanguage]) {
-			preference.setModelOptions({ ...preference.modelOptions, lang: preference.displayLanguage.split('-')[0].toLowerCase() })
+			// Chinese (Taiwan) is a transcription language of its own: Chinese in Traditional characters and Taiwan wording.
+			const lang = preference.displayLanguage === 'zh-TW' ? 'zh-TW' : preference.displayLanguage.split('-')[0].toLowerCase()
+			preference.setModelOptions({ ...preference.modelOptions, lang })
 			preference.setTextAreaDirection(getTextDirection())
 		}
 	}

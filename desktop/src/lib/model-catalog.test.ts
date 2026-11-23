@@ -151,6 +151,8 @@ describe('language choice', () => {
 		expect(defaultCatalogLanguage('auto', 'zh-CN', withTaiwan)).toBe('zh')
 		// A Chinese transcription on an English UI has no region to go by.
 		expect(defaultCatalogLanguage('zh', 'en-TW', withTaiwan)).toBe('zh')
+		// Transcribing Chinese (Taiwan) goes there whatever the UI language.
+		expect(defaultCatalogLanguage('zh-TW', 'en-US', withTaiwan)).toBe('zh-TW')
 	})
 
 	it('falls back to the multilingual group for a language without its own model', () => {

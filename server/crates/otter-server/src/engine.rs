@@ -2,6 +2,8 @@ use anyhow::{bail, Context as _};
 use serde::Serialize;
 use whisper_rs::{ContextOptions, Segment, StreamCallbacks, TranscribeOptions, TranscribeResult, Word};
 
+use crate::taiwan;
+
 /// Centiseconds per encoder frame of the Parakeet and Nemotron FastConformers (80 ms).
 const FRAME_CS: i64 = 8;
 
@@ -130,7 +132,30 @@ impl Engine {
         self.transcribe_stream(samples, options, StreamCallbacks::default())
     }
 
+    /// Transcribes with every engine; Chinese (Taiwan) is Chinese with its text converted, as it streams and at the end.
     pub fn transcribe_stream(
+        &mut self,
+        samples: &[f32],
+        options: TranscribeOptions,
+        mut callbacks: StreamCallbacks<'_>,
+    ) -> anyhow::Result<TranscribeResult> {
+        let taiwan = taiwan::is_taiwan(options.language.as_deref()) && !options.detect_language;
+        let options = taiwan::engine_options(options);
+        if !taiwan {
+            return self.transcribe_engine(samples, options, callbacks);
+        }
+        if let Some(mut on_segment) = callbacks.on_segment.take() {
+            callbacks.on_segment = Some(Box::new(move |mut segment| {
+                taiwan::convert_segment(&mut segment);
+                on_segment(segment);
+            }));
+        }
+        let mut result = self.transcribe_engine(samples, options, callbacks)?;
+        result.segments.iter_mut().for_each(taiwan::convert_segment);
+        Ok(result)
+    }
+
+    fn transcribe_engine(
         &mut self,
         samples: &[f32],
         options: TranscribeOptions,
@@ -266,7 +291,7 @@ fn gguf_capabilities(engine: &str, languages: Vec<String>, language_detection: b
     EngineCapabilities {
         engine: engine.to_string(),
         requires_vad: true,
-        languages,
+        languages: taiwan::with_taiwan(languages),
         language_detection,
         streaming: false,
         translation: false,
@@ -279,7 +304,7 @@ pub fn whisper_capabilities() -> EngineCapabilities {
     EngineCapabilities {
         engine: "whisper".to_string(),
         requires_vad: false,
-        languages: whisper_rs::supported_languages(),
+        languages: taiwan::with_taiwan(whisper_rs::supported_languages()),
         language_detection: true,
         streaming: true,
         translation: true,
