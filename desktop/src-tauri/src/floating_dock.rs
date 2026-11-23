@@ -119,10 +119,9 @@ fn build_dock_window(
         .map_err(|error| error.to_string())?;
 
     #[cfg(target_os = "macos")]
-    unsafe {
-        use objc2_app_kit::{NSStatusWindowLevel, NSWindow, NSWindowCollectionBehavior};
+    crate::native_window::with_ns_window(&window, |native_window| {
+        use objc2_app_kit::{NSStatusWindowLevel, NSWindowCollectionBehavior};
 
-        let native_window: &NSWindow = &*window.ns_window().map_err(|error| error.to_string())?.cast();
         native_window.setCollectionBehavior(
             native_window.collectionBehavior()
                 | NSWindowCollectionBehavior::CanJoinAllSpaces
@@ -130,7 +129,7 @@ fn build_dock_window(
         );
         native_window.setLevel(NSStatusWindowLevel);
         native_window.setOpaque(false);
-    }
+    });
     Ok(window)
 }
 
@@ -241,11 +240,7 @@ fn show_menu(app: &AppHandle) -> Result<(), String> {
         .map_err(|error| error.to_string())?;
     menu.show().map_err(|error| error.to_string())?;
     #[cfg(target_os = "macos")]
-    unsafe {
-        use objc2_app_kit::NSWindow;
-        let native_window: &NSWindow = &*menu.ns_window().map_err(|error| error.to_string())?.cast();
-        native_window.orderFrontRegardless();
-    }
+    crate::native_window::with_ns_window(&menu, |native_window| native_window.orderFrontRegardless());
     app.emit(MENU_VISIBLE_EVENT, true).map_err(|error| error.to_string())
 }
 

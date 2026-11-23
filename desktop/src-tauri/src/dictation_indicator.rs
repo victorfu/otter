@@ -74,10 +74,9 @@ fn create_window(app: &tauri::AppHandle) -> Result<WebviewWindow, String> {
     window.set_ignore_cursor_events(true).map_err(|error| error.to_string())?;
 
     #[cfg(target_os = "macos")]
-    unsafe {
-        use objc2_app_kit::{NSStatusWindowLevel, NSWindow, NSWindowCollectionBehavior};
+    crate::native_window::with_ns_window(&window, |native_window| {
+        use objc2_app_kit::{NSStatusWindowLevel, NSWindowCollectionBehavior};
 
-        let native_window: &NSWindow = &*window.ns_window().map_err(|error| error.to_string())?.cast();
         native_window.setCollectionBehavior(
             native_window.collectionBehavior()
                 | NSWindowCollectionBehavior::CanJoinAllSpaces
@@ -85,7 +84,7 @@ fn create_window(app: &tauri::AppHandle) -> Result<WebviewWindow, String> {
         );
         native_window.setLevel(NSStatusWindowLevel);
         native_window.setOpaque(false);
-    }
+    });
     position_window(app, &window)?;
     Ok(window)
 }
@@ -178,13 +177,10 @@ pub fn show_dictation_indicator(app: tauri::AppHandle, state: DictationIndicator
     }
     window.show().map_err(|error| error.to_string())?;
     #[cfg(target_os = "macos")]
-    unsafe {
-        use objc2_app_kit::{NSStatusWindowLevel, NSWindow};
-
-        let native_window: &NSWindow = &*window.ns_window().map_err(|error| error.to_string())?.cast();
-        native_window.setLevel(NSStatusWindowLevel);
+    crate::native_window::with_ns_window(&window, |native_window| {
+        native_window.setLevel(objc2_app_kit::NSStatusWindowLevel);
         native_window.orderFrontRegardless();
-    }
+    });
     if let Err(error) = window.emit("dictation-indicator-state", state) {
         tracing::error!("Could not update dictation indicator: {error}");
     }
