@@ -94,7 +94,7 @@ describe('catalog additions', () => {
 	it('lists the turbo mirrors under the same hash', () => {
 		const turbo = catalog.models.find((model) => model.id === 'whisper-large-v3-turbo')!
 		const downloads = catalogDownloads(turbo)
-		expect(downloads.map((download) => new URL(download.url).hostname)).toEqual(['huggingface.co', 'huggingface.co', 'github.com'])
+		expect(downloads.map((download) => new URL(download.url).hostname)).toEqual(['huggingface.co', 'github.com'])
 		expect(downloads.every((download) => download.sha256 === turbo.sha256 && download.size === turbo.size)).toBe(true)
 	})
 
